@@ -1,0 +1,22 @@
+---
+title: "Visualisation 1"
+author: "Marion M. & Armelle L."
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Idée : Carte à côté de boxplots avec couleurs correspondantes 
+
+# Import et sélection 
+
+```{r}
+library(readxl)
+species1 <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
+species2 <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 3)
+species3 <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 4)
+raw_data <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 6)
+```
+
