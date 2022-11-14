@@ -18,23 +18,29 @@ library(readxl)
 # Import et sélection 
 
 ```{r}
-species1 <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
-#species2 <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 3) # on importe pas car pas les variables géospatiales
-species3 <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 4)
-raw_data <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 6)
+species <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2) # on utilise les données de BirdLife
+raw_data <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 6) # utile car colonne 'COUNTRY' 
 ```
-On choisit les variables qui nous intéressent : 
+On choisit les variables qui nous intéressent puis on lie les noms des pays associés présent dans `raw_data`
 ```{r}
-species1bis <- species1 %>% 
-  select (Species1, Family1, Order1, Female, Male, Unknown, Beak.Length_Culmen, Beak.Length_Nares, Beak.Width, Beak.Depth, Tarsus.Length, Wing.Length, Kipps.Distance, `Hand-Wing.Index`, Tail.Length, Mass, Habitat, Habitat.Density, Migration, Trophic.Level, Trophic.Niche, Primary.Lifestyle, Min.Latitude, Max.Latitude, Centroid.Latitude, Centroid.Longitude, Range.Size) %>% 
-  rename(Species =  Species1, Family = Family1, Order = Order1)
+raw_data <- raw_data %>% select(Avibase.ID, Country_WRI)
 
-species3bis <- species3 %>% 
-  select (Species3, Family3, Order3, Female, Male, Unknown, Beak.Length_Culmen, Beak.Length_Nares, Beak.Width, Beak.Depth, Tarsus.Length, Wing.Length, Kipps.Distance, `Hand-Wing.Index`, Tail.Length, Mass, Habitat, Habitat.Density, Migration, Trophic.Level, Trophic.Niche, Primary.Lifestyle, Min.Latitude, Max.Latitude, Centroid.Latitude, Centroid.Longitude, Range.Size) %>% 
-  rename(Species =  Species3, Family = Family3, Order = Order3) %>% 
-  mutate(Habitat.Density = as.numeric(Habitat.Density))
-  
+species<- species %>% 
+  select (Avibase.ID1, Species1, Family1, Order1, Female, Male, Unknown, Beak.Length_Culmen, Beak.Length_Nares, Beak.Width, Beak.Depth, Tarsus.Length, Wing.Length, Kipps.Distance, `Hand-Wing.Index`, Tail.Length, Mass, Habitat, Habitat.Density, Migration, Trophic.Level, Trophic.Niche, Primary.Lifestyle, Min.Latitude, Max.Latitude, Centroid.Latitude, Centroid.Longitude, Range.Size) %>% 
+  rename(Species =  Species1, Family = Family1, Order = Order1, Avibase.ID= Avibase.ID1) %>% 
+  mutate(Species = as.factor(Species), Family = as.factor(Family), Order = as.factor(Order)) %>% 
+  left_join(raw_data) %>% 
+  distinct()
 
-species <- bind_rows(species1bis, species3bis)
+
+
+```
+# Premier point de vue
+
+```{r}
+attach(species)
+data.frame(Classes = c("Species", "Family", "Order"), 
+           Effectifs = c(length(levels(Species)),length(levels(Family)),length(levels(Order))))
+detach(species)
 ```
 
