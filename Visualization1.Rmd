@@ -10,13 +10,31 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Idée : Carte à côté de boxplots avec couleurs correspondantes 
 
+```{r}
+library(dplyr)
+library(readxl)
+```
+
 # Import et sélection 
 
 ```{r}
-library(readxl)
 species1 <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
-species2 <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 3)
+#species2 <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 3) # on importe pas car pas les variables géospatiales
 species3 <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 4)
 raw_data <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 6)
+```
+On choisit les variables qui nous intéressent : 
+```{r}
+species1bis <- species1 %>% 
+  select (Species1, Family1, Order1, Female, Male, Unknown, Beak.Length_Culmen, Beak.Length_Nares, Beak.Width, Beak.Depth, Tarsus.Length, Wing.Length, Kipps.Distance, `Hand-Wing.Index`, Tail.Length, Mass, Habitat, Habitat.Density, Migration, Trophic.Level, Trophic.Niche, Primary.Lifestyle, Min.Latitude, Max.Latitude, Centroid.Latitude, Centroid.Longitude, Range.Size) %>% 
+  rename(Species =  Species1, Family = Family1, Order = Order1)
+
+species3bis <- species3 %>% 
+  select (Species3, Family3, Order3, Female, Male, Unknown, Beak.Length_Culmen, Beak.Length_Nares, Beak.Width, Beak.Depth, Tarsus.Length, Wing.Length, Kipps.Distance, `Hand-Wing.Index`, Tail.Length, Mass, Habitat, Habitat.Density, Migration, Trophic.Level, Trophic.Niche, Primary.Lifestyle, Min.Latitude, Max.Latitude, Centroid.Latitude, Centroid.Longitude, Range.Size) %>% 
+  rename(Species =  Species3, Family = Family3, Order = Order3) %>% 
+  mutate(Habitat.Density = as.numeric(Habitat.Density))
+  
+
+species <- bind_rows(species1bis, species3bis)
 ```
 
