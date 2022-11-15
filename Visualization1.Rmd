@@ -10,17 +10,23 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Idée : Carte à côté de boxplots avec couleurs correspondantes 
 
-```{r}
-library(dplyr)
+```{r message=FALSE}
+library(tidyverse)
 library(readxl)
+library(ggplot2)
+library(ggspatial)
+library(leaflet)
+library(sf)
+library(car)
 ```
 
 # Import et sélection 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 species <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2) # on utilise les données de BirdLife
 raw_data <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 6) # utile car colonne 'COUNTRY' 
 ```
+
 On choisit les variables qui nous intéressent puis on lie les noms des pays associés présent dans `raw_data`
 ```{r}
 raw_data <- raw_data %>% select(Avibase.ID, Country_WRI)
@@ -32,8 +38,6 @@ species<- species %>%
   left_join(raw_data) %>% 
   distinct()
 
-
-
 ```
 # Premier point de vue
 
@@ -42,5 +46,122 @@ attach(species)
 data.frame(Classes = c("Species", "Family", "Order"), 
            Effectifs = c(length(levels(Species)),length(levels(Family)),length(levels(Order))))
 detach(species)
+```
+
+# Première carte 
+
+on récupère les polygones des pays : 
+```{r}
+nc <- st_read("data/World_Countries.shp")
+```
+
+On relie chaque pays à son polygone et on traite si nom des pays différents :
+```{r}
+sort(unique(species[!(species$Country_WRI %in% nc$COUNTRY), ]$Country_WRI)) # Pays pas reconnu dans `nc`
+```
+On doit s'amuser à renommer tout ces pays :) 
+```{r warning=FALSE}
+species.Bis <- species %>% rename(COUNTRY = Country_WRI) %>% 
+  mutate(COUNTRY= recode(COUNTRY, "'Cayman Islands'='Cayman Islands (UK)'"), 
+         COUNTRY= recode(COUNTRY, "'Faroe Islands'='Faroe Islands (Denmark)'"), 
+         COUNTRY= recode(COUNTRY, "'American Samoa'='American Samoa (US)'"),
+         COUNTRY= recode(COUNTRY, "'Bermuda'='Bermuda (UK)'"), 
+         COUNTRY= recode(COUNTRY, "'British Virgin Islands'='British Virgin Islands(UK)'"),
+         COUNTRY= recode(COUNTRY, "'Cook Islands'='Cook Islands (New Zealand)'"),
+         COUNTRY= recode(COUNTRY, "'Falkland Islands'='Falkland Islands (UK)'"),
+         COUNTRY= recode(COUNTRY, "'French Polynesia'='French Polynesia (France)'"), 
+         COUNTRY= recode(COUNTRY, "'French Southern and Antarctic Lands'='French Southern & Antarctic Lands (France)'"), 
+         COUNTRY= recode(COUNTRY, "'Gibraltar'='Gibraltar (UK)'"), 
+         COUNTRY= recode(COUNTRY, "'Greenland'='Greenland (Denmark)'"), 
+         COUNTRY= recode(COUNTRY, "'Guam'='Guam (US)'"), 
+         COUNTRY= recode(COUNTRY, "'Guernsey'='Guernsey (UK)'"), 
+         COUNTRY= recode(COUNTRY, "'Guinea Bissau'='Guinea-Bissau'"),
+         COUNTRY= recode(COUNTRY, "'Montserrat'='Guernsey (UK)'"),
+         COUNTRY= recode(COUNTRY, "'Guernsey'='Montserrat (UK)'"),
+         COUNTRY= recode(COUNTRY, "'New Caledonia'='New Caledonia (France)'"),
+         COUNTRY= recode(COUNTRY, "'Norfolk Island'='Norfolk Island (Australia)'"),
+         COUNTRY= recode(COUNTRY, "'Northern Mariana Islands'='Northern Mariana Islands (US)'"),
+         COUNTRY= recode(COUNTRY, "'Palau'='Palau (US)'"),
+         COUNTRY= recode(COUNTRY, "'Pitcairn Islands'='Pitcairn Islands (UK)'"),
+         COUNTRY= recode(COUNTRY, "'Puerto Rico'='Puerto Rico (US)'"),
+         COUNTRY= recode(COUNTRY, "'Republic of Congo'='Democratic Republic of the Congo'"),
+         COUNTRY= recode(COUNTRY, "'Republic of Serbia'='Serbia'"),
+         COUNTRY= recode(COUNTRY, "'Saint Helena'='St. Helena (UK)'"),
+         COUNTRY= recode(COUNTRY, "'Saint Lucia'='St. Lucia'"),
+         COUNTRY= recode(COUNTRY, "'Saint Vincent and the Grenadines'='St. Vincent and the Grenadines'"),
+         COUNTRY= recode(COUNTRY, "'Samoa'='Western Samoa'"),
+         COUNTRY= recode(COUNTRY, "'South Georgia and South Sandwich Islands'='South Georgia and the South Sandwich Is (UK)'"),
+         COUNTRY= recode(COUNTRY, "'The Bahamas'='Bahamas'"),
+         COUNTRY= recode(COUNTRY, "'Timor-Leste'='East Timor'"),
+         COUNTRY= recode(COUNTRY, "'Turks and Caicos Islands'='Turks and Caicos Islands (UK)'"),
+         COUNTRY= recode(COUNTRY, "'United Republic of Tanzania'='Tanzania'"),
+         COUNTRY= recode(COUNTRY, "'United States of America'='United States'"),
+         COUNTRY= recode(COUNTRY, "'United States Virgin Islands'='American Virgin Islands (US)'"))
+unique(species.Bis[!(species.Bis$COUNTRY %in% nc$COUNTRY), ]$COUNTRY)
+```
+On met tout les "NA" sous forme NA et on colle les coordonnées des polygones de chaque pays :
+```{r}
+species.Coord <- species.Bis %>% mutate(COUNTRY= recode(COUNTRY, "'NA'=NA")) %>% left_join(nc) %>% rename()
+sum(is.na(species.Coord$COUNTRY))
+```
+```{r}
+species.Coord %>% select(COUNTRY, geometry, Species, Habitat) %>% group_by(COUNTRY, Habitat) %>% mutate("nb_habitat" = n())
+
+
+
+ggplot() + geom_boxplot(fill = )
+
+
+
+
+
+
+#ggplot() + geom_sf(aes(geometry = geometry), fill=)
+```
+
+```{r}
+mygeocode <- function(adresses){
+  # adresses est un vecteur contenant toutes les adresses sous forme de chaine de caracteres
+  nominatim_osm <- function(address = NULL){
+    ## details: http://wiki.openstreetmap.org/wiki/Nominatim
+    ## fonction nominatim_osm proposée par D.Kisler
+    if(suppressWarnings(is.null(address)))  return(data.frame())
+    tryCatch(
+      d <- jsonlite::fromJSON(
+        gsub('\\@addr\\@', gsub('\\s+', '\\%20', address),
+             'http://nominatim.openstreetmap.org/search/@addr@?format=json&addressdetails=0&limit=1')
+      ), error = function(c) return(data.frame())
+    )
+    if(length(d) == 0) return(data.frame())
+    return(c(as.numeric(d$lon), as.numeric(d$lat)))
+  }
+  tableau <- t(sapply(adresses,nominatim_osm))
+  colnames(tableau) <- c("lon","lat")
+  return(tableau)
+}
+```
+
+```{r}
+for (pays in species$Country_WRI){
+  print(mygeocode(pays))
+}
+```
+
+```{r}
+world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+class(world)
+```
+
+
+
+```{r}
+data_map <- species %>% rename(name_long = Country_WRI) %>% 
+  left_join(world)
+class(data_map)
+
+ggplot(data = world) +
+  geom_sf(aes(fill = species)) +
+  annotation_scale(location = "bl", width_hint = 0.5)+ 
+  scale_fill_viridis_c(option = "plasma", trans = "sqrt")+theme_void()
 ```
 
