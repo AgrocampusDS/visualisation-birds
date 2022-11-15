@@ -39,6 +39,19 @@ species<- species %>%
   distinct()
 
 ```
+
+# Répartition de la masse par famille
+
+```{r}
+species %>% 
+  filter(Mass < 6000) -> species2
+
+ggplot(species2, aes(x=Order, y = Mass))+
+  geom_boxplot()+
+  theme_minimal()+
+  theme(axis.text.x=element_text(angle = -90, hjust = 0))
+```
+
 # Association polygones par pays 
 
 ```{r}
