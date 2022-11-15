@@ -52,7 +52,7 @@ detach(species)
 
 on récupère les polygones des pays : 
 ```{r}
-nc <- st_read("data/World_Countries.shp")
+nc <- st_read("data/spatial/World_Countries.shp")
 ```
 
 On relie chaque pays à son polygone et on traite si nom des pays différents :
