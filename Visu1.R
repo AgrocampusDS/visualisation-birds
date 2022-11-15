@@ -3,7 +3,7 @@
 ############################################
 
 packages <- c("ape", "phytools", "readxl", "rgdal", "rgeos", "sf", "RColorBrewer", "viridis", "ggplot2", "gridExtra", "dplyr", "lme4", "cowplot",
-              "lmerTest","scales","ggExtra","grid","rptR","MuMIn","nlme")
+              "lmerTest","scales","ggExtra","grid","rptR","MuMIn","nlme", "gridExtra")
 install.packages(setdiff(packages, rownames(installed.packages())))
 
 library(ape)
@@ -26,6 +26,7 @@ library(grid)
 library(rptR)
 library(MuMIn)
 library(nlme)
+library(gridExtra)
 
 ############################################
 ### IMPORTATION
@@ -64,7 +65,7 @@ dat <- dat %>% select(Species1, Primary.Lifestyle, Trophic.Niche, `Hand-Wing.Ind
 
 
 ############################################
-### CONSTRUCTION CARTE
+### CONSTRUCTION CARTES
 ############################################
 
 # On associe à chaque espèce répertoriée dans le dico géographique les variables sélectionnées précédemment
@@ -100,23 +101,90 @@ colors<-colorRampPalette(colors)(50)
 
 # Carte 
 
-ggplot(gridB.sf) +
+g1 <- ggplot(gridB.sf) +
   geom_sf(aes(fill = col.HWI_med, color = col.HWI_med)) +
   scale_colour_gradientn(colors = colors) +
   scale_fill_gradientn(colors = colors) +
   theme_void()
 
-ggplot(gridB.sf) +
+g2 <- ggplot(gridB.sf) +
   geom_sf(aes(fill = col.T_med, color = col.T_med)) +
   scale_colour_gradientn(colors = colors) +
   scale_fill_gradientn(colors = colors) +
   theme_void()
 
-ggplot(gridB.sf) +
+g3 <- ggplot(gridB.sf) +
   geom_sf(aes(fill = col.B_med, color = col.B_med)) +
   scale_colour_gradientn(colors = colors) +
   scale_fill_gradientn(colors = colors) +
   theme_void()
 
+############################################
+### CONSTRUCTION BOXPLOTS
+############################################
 
+# On choisit de représenter les trois mêmes variables en fonction du mode de vie: 
+
+# Aerial = en vol; 
+# Terrestrial = à terre; 
+# Insessorial = perché au dessus du sol; 
+# Aquatic = sur l'eau, se nourrit dans l'eau;
+# Generalist = pas de mode de vie particulier.
+
+# On récupère une palette de couleurs issue des couleurs choisies pour les cartes 
+MapColors<-colorRampPalette(colors)(101)
+
+# Taille des ailes en fonction du style de vie
+brks<-quantile(gridB@data$HWI_med,probs=seq(0,1,0.01),na.rm=T)
+HWI_med.boxplot<-sapply(split(dat$`Hand-Wing.Index`,dat$Primary.Lifestyle),median,na.rm=T)
+cols.hwi<-rep(NA,length(HWI_med.boxplot))
+for(i in 1:length(HWI_med.boxplot)){
+  diffVals<-abs(brks-HWI_med.boxplot[i])
+  cols.hwi[i]<-MapColors[which.min(diffVals)]
+}
+
+b1 <- dat %>% ggplot(aes(x=Primary.Lifestyle,y=`Hand-Wing.Index`,fill=Primary.Lifestyle))+
+  geom_boxplot()+
+  theme_classic()+
+  scale_fill_manual(values = cols.hwi)+
+  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
+  labs(x=NULL, y ="Taille de l'aile")+
+  theme(legend.position='none')
+
+# Taille relative du tarse en fonction du style de vie
+brks<-quantile(gridB@data$T_med,probs=seq(0,1,0.01),na.rm=T)
+T_med.boxplot<-sapply(split(dat$tarsus.res, dat$Primary.Lifestyle),median,na.rm=T)
+cols.T<-rep(NA,length(T_med.boxplot))
+for(i in 1:length(T_med.boxplot)){
+  diffVals<-abs(brks-T_med.boxplot[i])
+  cols.T[i]<-MapColors[which.min(diffVals)]
+}
+
+b2 <- dat %>% ggplot(aes(x=Primary.Lifestyle,y=tarsus.res,fill=Primary.Lifestyle))+
+  geom_boxplot()+
+  theme_classic()+
+  scale_fill_manual(values = cols.T) + 
+  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
+  labs(x=NULL, y ="Taille relative du tarse")+
+  theme(legend.position='none')
+
+# Taille du bec en fonction de son régime alimentaire 
+
+brks<-quantile(gridB@data$B_med,probs=seq(0,1,0.01),na.rm=T)
+B_med.boxplot<-sapply(split(dat$bill.res,dat$Trophic.Niche),median,na.rm=T)
+cols.b<-rep(NA,length(B_med.boxplot))
+for(i in 1:length(B_med.boxplot)){
+  diffVals<-abs(brks-B_med.boxplot[i])
+  cols.b[i]<-MapColors[which.min(diffVals)]
+}
+
+b3 <- dat %>% ggplot(aes(x=Trophic.Niche,y=bill.res,fill=Trophic.Niche))+
+  geom_boxplot()+
+  theme_classic()+
+  scale_fill_manual(values = cols.b)+ 
+  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
+  labs(x=NULL, y ="Taille relative du bec")+theme(legend.position='none')
+
+
+grid.arrange(g1, p1, g2, b2, g3, b3, ncol=2, nrow = 3)
 
