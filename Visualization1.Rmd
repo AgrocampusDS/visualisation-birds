@@ -39,7 +39,7 @@ species<- species %>%
   distinct()
 
 ```
-# Premier point de vue
+# Association polygones par pays 
 
 ```{r}
 attach(species)
@@ -104,64 +104,7 @@ On met tout les "NA" sous forme NA et on colle les coordonnées des polygones de
 species.Coord <- species.Bis %>% mutate(COUNTRY= recode(COUNTRY, "'NA'=NA")) %>% left_join(nc) %>% rename()
 sum(is.na(species.Coord$COUNTRY))
 ```
-```{r}
-species.Coord %>% select(COUNTRY, geometry, Species, Habitat) %>% group_by(COUNTRY, Habitat) %>% mutate("nb_habitat" = n())
+-> Je ne dois pas avoir un pays = une couleur 
 
-
-
-ggplot() + geom_boxplot(fill = )
-
-
-
-
-
-
-#ggplot() + geom_sf(aes(geometry = geometry), fill=)
-```
-
-```{r}
-mygeocode <- function(adresses){
-  # adresses est un vecteur contenant toutes les adresses sous forme de chaine de caracteres
-  nominatim_osm <- function(address = NULL){
-    ## details: http://wiki.openstreetmap.org/wiki/Nominatim
-    ## fonction nominatim_osm proposée par D.Kisler
-    if(suppressWarnings(is.null(address)))  return(data.frame())
-    tryCatch(
-      d <- jsonlite::fromJSON(
-        gsub('\\@addr\\@', gsub('\\s+', '\\%20', address),
-             'http://nominatim.openstreetmap.org/search/@addr@?format=json&addressdetails=0&limit=1')
-      ), error = function(c) return(data.frame())
-    )
-    if(length(d) == 0) return(data.frame())
-    return(c(as.numeric(d$lon), as.numeric(d$lat)))
-  }
-  tableau <- t(sapply(adresses,nominatim_osm))
-  colnames(tableau) <- c("lon","lat")
-  return(tableau)
-}
-```
-
-```{r}
-for (pays in species$Country_WRI){
-  print(mygeocode(pays))
-}
-```
-
-```{r}
-world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
-class(world)
-```
-
-
-
-```{r}
-data_map <- species %>% rename(name_long = Country_WRI) %>% 
-  left_join(world)
-class(data_map)
-
-ggplot(data = world) +
-  geom_sf(aes(fill = species)) +
-  annotation_scale(location = "bl", width_hint = 0.5)+ 
-  scale_fill_viridis_c(option = "plasma", trans = "sqrt")+theme_void()
-```
+# Utilisation des points 
 
