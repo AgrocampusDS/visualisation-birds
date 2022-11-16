@@ -1,5 +1,11 @@
 ## Problématique : tester la règle de Bergmann sur la base de données AVONET.
 
-# 3 graphiques :
-- répartition géographique de la taille du corps
-- 
+- Carte richesse par biome 
+- Carte répartition géographique de la masse des oiseaux
+- masse versus richesse
+
+
+Etape construction map 
+
+3 fichiers : worldID-espece, worldID-polygone, espece-traits
+(on associe à a chaque worldID la médiane des traits et on associe pr chaque worldid un polygone)
