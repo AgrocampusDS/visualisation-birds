@@ -3,7 +3,7 @@
 ############################################
 
 packages <- c("ape", "phytools", "readxl", "rgdal", "rgeos", "sf", "RColorBrewer", "viridis", "ggplot2", "gridExtra", "dplyr", "lme4", "cowplot",
-              "lmerTest","scales","ggExtra","grid","rptR","MuMIn","nlme", "gridExtra")
+              "lmerTest","scales","ggExtra","grid","rptR","MuMIn","nlme", "gridExtra", "tidyverse")
 install.packages(setdiff(packages, rownames(installed.packages())))
 
 library(ape)
@@ -27,6 +27,7 @@ library(rptR)
 library(MuMIn)
 library(nlme)
 library(gridExtra)
+library(tidyverse)
 
 ############################################
 ### IMPORTATION
@@ -96,28 +97,34 @@ gridB@data <- gridB@data %>%
 gridB.sf <- st_as_sf(gridB)
 
 # On créé des palettes de couleurs
-colors<-c(brewer.pal(9,"Blues")[2:4],brewer.pal(9,"YlGnBu")[5:9])
+colors<-rev(c(brewer.pal(9,"Spectral")))
 colors<-colorRampPalette(colors)(50)
 
-# Carte 
 
+# Carte 
+val_med <- gridB@data %>% select(HWI_med) %>% filter(HWI_med != "NA")
 g1 <- ggplot(gridB.sf) +
   geom_sf(aes(fill = col.HWI_med, color = col.HWI_med)) +
-  scale_colour_gradientn(colors = colors) +
-  scale_fill_gradientn(colors = colors) +
-  theme_void()
+  scale_colour_gradientn(colours = colors) +
+  scale_fill_gradientn(colours = colors, breaks = seq(0, max(val_med),length.out=6), name = "Taille de l'aile") +
+  theme_void()+
+  theme(legend.position="bottom", 
+        legend.title = element_text(size=10,face="bold", vjust = 0.85))
+  
 
 g2 <- ggplot(gridB.sf) +
   geom_sf(aes(fill = col.T_med, color = col.T_med)) +
   scale_colour_gradientn(colors = colors) +
   scale_fill_gradientn(colors = colors) +
-  theme_void()
+  theme_void()+
+  theme(legend.position = "none")
 
 g3 <- ggplot(gridB.sf) +
   geom_sf(aes(fill = col.B_med, color = col.B_med)) +
   scale_colour_gradientn(colors = colors) +
   scale_fill_gradientn(colors = colors) +
-  theme_void()
+  theme_void()+
+  theme(legend.position = "none")
 
 ############################################
 ### CONSTRUCTION BOXPLOTS
@@ -130,6 +137,12 @@ g3 <- ggplot(gridB.sf) +
 # Insessorial = perché au dessus du sol; 
 # Aquatic = sur l'eau, se nourrit dans l'eau;
 # Generalist = pas de mode de vie particulier.
+
+dat <- dat %>% mutate(Primary.Lifestyle = fct_recode(Primary.Lifestyle, "Aérien" = "Aerial"),
+                      Primary.Lifestyle = fct_recode(Primary.Lifestyle, "Terrestre" = "Terrestrial"), 
+                      Primary.Lifestyle = fct_recode(Primary.Lifestyle, "Insessoriel" = "Insessorial"),
+                      Primary.Lifestyle = fct_recode(Primary.Lifestyle, "Aquatique" = "Aquatic"),
+                      Primary.Lifestyle = fct_recode(Primary.Lifestyle, "Généraliste" = "Generalist"))
 
 # On récupère une palette de couleurs issue des couleurs choisies pour les cartes 
 MapColors<-colorRampPalette(colors)(101)
@@ -149,7 +162,7 @@ b1 <- dat %>% ggplot(aes(x=Primary.Lifestyle,y=`Hand-Wing.Index`,fill=Primary.Li
   scale_fill_manual(values = cols.hwi)+
   theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
   labs(x=NULL, y ="Taille de l'aile")+
-  theme(legend.position='none')
+  theme(legend.position="none")
 
 # Taille relative du tarse en fonction du style de vie
 brks<-quantile(gridB@data$T_med,probs=seq(0,1,0.01),na.rm=T)
@@ -168,17 +181,34 @@ b2 <- dat %>% ggplot(aes(x=Primary.Lifestyle,y=tarsus.res,fill=Primary.Lifestyle
   labs(x=NULL, y ="Taille relative du tarse")+
   theme(legend.position='none')
 
-# Taille du bec en fonction de son régime alimentaire 
+# Taille du bec en fonction de son régime alimentaire (mange à 60%) :
+
+# Frugivore = fruits; 
+# Granivore = graines et noix; 
+# Nectarivore =  nectar; 
+# Herbivore = matières végétales dans les systèmes non aquatiques; 
+# Herbivore aquatic = matières végétales dans les systèmes aquatiques; 
+# Invertivore = invertébrés des systèmes terrestres; 
+# Vertivore =  vertébrés des systèmes terrestres; 
+# Aquatic Predator = animaux vertébrés et invertébrés dans les systèmes aquatiques; 
+# Scavenger = charognes, d'abats ou de déchets; 
+# Omnivore = niches multiples, à l'intérieur ou à travers les niveaux trophiques, dans des proportions relativement égales. . 
+
+dat.bis <- dat %>% mutate(Trophic.Niche = as.factor(Trophic.Niche),
+                          Trophic.Niche = fct_recode(Trophic.Niche, "Herbivore aquatique" = "Herbivore aquatic"),
+                          Trophic.Niche = fct_recode(Trophic.Niche, "Prédateur aquatique" = "Aquatic predator"), 
+                          Trophic.Niche = fct_recode(Trophic.Niche, "Charognard" = "Scavenger")) %>% 
+  filter(Trophic.Niche != "NA")
 
 brks<-quantile(gridB@data$B_med,probs=seq(0,1,0.01),na.rm=T)
-B_med.boxplot<-sapply(split(dat$bill.res,dat$Trophic.Niche),median,na.rm=T)
+B_med.boxplot<-sapply(split(dat.bis$bill.res,dat.bis$Trophic.Niche),median,na.rm=T)
 cols.b<-rep(NA,length(B_med.boxplot))
 for(i in 1:length(B_med.boxplot)){
   diffVals<-abs(brks-B_med.boxplot[i])
   cols.b[i]<-MapColors[which.min(diffVals)]
 }
 
-b3 <- dat %>% ggplot(aes(x=Trophic.Niche,y=bill.res,fill=Trophic.Niche))+
+b3 <- dat.bis %>% ggplot(aes(x=Trophic.Niche,y=bill.res,fill=Trophic.Niche))+
   geom_boxplot()+
   theme_classic()+
   scale_fill_manual(values = cols.b)+ 
@@ -186,5 +216,5 @@ b3 <- dat %>% ggplot(aes(x=Trophic.Niche,y=bill.res,fill=Trophic.Niche))+
   labs(x=NULL, y ="Taille relative du bec")+theme(legend.position='none')
 
 
-grid.arrange(g1, p1, g2, b2, g3, b3, ncol=2, nrow = 3)
+grid.arrange(g1, b1, g2, b2, g3, b3, ncol=2, nrow = 3)
 

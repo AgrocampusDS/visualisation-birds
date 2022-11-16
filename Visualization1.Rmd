@@ -11,113 +11,115 @@ knitr::opts_chunk$set(echo = TRUE)
 Idée : Carte à côté de boxplots avec couleurs correspondantes 
 
 ```{r message=FALSE}
-library(tidyverse)
+packages <- c("ape", "phytools", "readxl", "rgdal", "rgeos", "sf", "RColorBrewer", "viridis", "ggplot2", "gridExtra", "dplyr", "lme4", "cowplot","lmerTest","scales","ggExtra","grid","rptR","MuMIn","nlme", "gridExtra", "tidyverse")
+install.packages(setdiff(packages, rownames(installed.packages())))
+
+library(ape)
+library(phytools)
 library(readxl)
-library(ggplot2)
-library(ggspatial)
-library(leaflet)
+require(rgdal)
+library(rgeos)
 library(sf)
-library(car)
+library(RColorBrewer)
+library(viridis)
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(lme4)
+library(cowplot)
+library(lmerTest)
+library(scales)
+library(ggExtra)
+library(grid)
+library(rptR)
+library(MuMIn)
+library(nlme)
+library(gridExtra)
+library(tidyverse)
+library(showtext)
 ```
 
-# Import et sélection 
+## Import et sélection 
 
 ```{r message=FALSE, warning=FALSE}
-species <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2) # on utilise les données de BirdLife
-raw_data <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 6) # utile car colonne 'COUNTRY' 
+# Traits par espèce BirdLife
+species <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
+# Grille de Behrman
+grid <- rgdal::readOGR("data/spatial/BehrmannMeterGrid_WGS84_land.shp")
+# Polygones des pays du monde
+countriesGeo <- rgdal::readOGR("data/spatial/all_countries.shp")
+# Dictionnaire géographique Birdlife 
+rangeData<-read.csv("data/spatial/AllSpeciesBirdLifeMaps2019.csv")
 ```
 
-On choisit les variables qui nous intéressent puis on lie les noms des pays associés présent dans `raw_data`
-```{r}
-raw_data <- raw_data %>% select(Avibase.ID, Country_WRI)
+## Pre-processing
 
-species<- species %>% 
-  select (Avibase.ID1, Species1, Family1, Order1, Female, Male, Unknown, Beak.Length_Culmen, Beak.Length_Nares, Beak.Width, Beak.Depth, Tarsus.Length, Wing.Length, Kipps.Distance, `Hand-Wing.Index`, Tail.Length, Mass, Habitat, Habitat.Density, Migration, Trophic.Level, Trophic.Niche, Primary.Lifestyle, Min.Latitude, Max.Latitude, Centroid.Latitude, Centroid.Longitude, Range.Size) %>% 
-  rename(Species =  Species1, Family = Family1, Order = Order1, Avibase.ID= Avibase.ID1) %>% 
-  mutate(Species = as.factor(Species), Family = as.factor(Family), Order = as.factor(Order)) %>% 
-  left_join(raw_data) %>% 
+```{r}
+# projection de Behrmann
+P4S.Behr <- CRS("+proj=cea +lon_0=0 +lat_ts=30 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs")
+gridB<-spTransform(grid,P4S.Behr)
+countries <- spTransform(countriesGeo,P4S.Behr)
+# simplification
+countriesS <- gSimplify(countries, tol=10000,topologyPreserve=TRUE)
+countriesS2 <- st_as_sf(countriesS)
+
+# selection variables et nettoyage
+species <- species %>% select(Species1, Primary.Lifestyle, Trophic.Niche, Mass) %>% 
+  na.omit() %>% 
+  mutate(Primary.Lifestyle = as.factor(Primary.Lifestyle), Trophic.Niche = as.factor(Trophic.Niche))
+```
+
+## Cartes
+
+```{r}
+# On associe à chaque espèce répertoriée dans le dico géographique sa masse
+rangeData <- rangeData %>% select(Species, WorldID) %>% 
+  merge(y = species[, c("Species1", "Mass")], by.x = "Species", by.y = "Species1") %>% 
+  na.omit()
+
+# On récupère les valeurs médianes de la masse par pays (par ID)
+med.C <- rangeData %>% group_by(WorldID) %>% 
+  mutate(masse_med = median(Mass)) %>% 
+  select(-Mass, -Species) %>% 
   distinct()
 
+# on implémente dans l'objet shapefile 
+gridB@data <- left_join(gridB@data, med.C)
+gridB@data <- gridB@data %>% select(-count, -sum, -mean, -min, -max)
+
+# On construit un gradient de couleurs
+# Pour tenir compte de la densité et non pas de la somme d'individus (les masses allant de 22g à 111kg), on construit des groupes d'intervalles. On construit les 50 quantiles (0%, 2%, 4%, ...) et le groupe 1 correspond au premier quantile (un seul individu), le groupe 2 aux individus qui ne sont pas dans le groupe 1 mais dans le second quantile, le groupe 3 aux individus du troisième quantiles mais pas dans le groupe 2, etc...
+# - 
+gridB@data <- gridB@data %>% 
+  mutate(col = findInterval(masse_med, quantile(masse_med,probs=seq(0,1,0.02),na.rm=T), all.inside = TRUE)) %>% 
+  distinct()
+
+gridB.sf <- st_as_sf(gridB)
+
+# On créé des palettes de couleurs
+colors<-c(brewer.pal(9,"PuBuGn")[-c(1:2)])
+colors<-colorRampPalette(colors)(50)
 ```
 
-# Répartition de la masse par famille
 
 ```{r}
-species %>% 
-  filter(Mass < 6000) -> species2
+loadfonts(device = "win")
+font_add_google("Montserrat")
 
-ggplot(species2, aes(x=Order, y = Mass))+
-  geom_boxplot()+
-  theme_minimal()+
-  theme(axis.text.x=element_text(angle = -90, hjust = 0))
+gridB.sf %>% rename(Masse = col) %>%  
+  ggplot() +
+  geom_sf(aes(fill = Masse, col = Masse)) +
+  scale_colour_gradientn(colours = colors, name = "Masse") +
+  scale_fill_gradientn(colours = colors, name = "Masse") +
+  labs(title = "Répartition géographique de la masse des oiseaux", 
+       subtitle = "selon les données de BirdLife", 
+       caption = "Echelle probabiliste")+
+  theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
+        plot.caption = element_text(hjust = 0.53, vjust=35, family="Montserrat", face = "italic"),
+        legend.position="bottom", 
+        legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
+        panel.background = element_rect(fill = "white")
+        )
 ```
-
-# Association polygones par pays 
-
-```{r}
-attach(species)
-data.frame(Classes = c("Species", "Family", "Order"), 
-           Effectifs = c(length(levels(Species)),length(levels(Family)),length(levels(Order))))
-detach(species)
-```
-
-# Première carte 
-
-on récupère les polygones des pays : 
-```{r}
-nc <- st_read("data/spatial/World_Countries.shp")
-```
-
-On relie chaque pays à son polygone et on traite si nom des pays différents :
-```{r}
-sort(unique(species[!(species$Country_WRI %in% nc$COUNTRY), ]$Country_WRI)) # Pays pas reconnu dans `nc`
-```
-On doit s'amuser à renommer tout ces pays :) 
-```{r warning=FALSE}
-species.Bis <- species %>% rename(COUNTRY = Country_WRI) %>% 
-  mutate(COUNTRY= recode(COUNTRY, "'Cayman Islands'='Cayman Islands (UK)'"), 
-         COUNTRY= recode(COUNTRY, "'Faroe Islands'='Faroe Islands (Denmark)'"), 
-         COUNTRY= recode(COUNTRY, "'American Samoa'='American Samoa (US)'"),
-         COUNTRY= recode(COUNTRY, "'Bermuda'='Bermuda (UK)'"), 
-         COUNTRY= recode(COUNTRY, "'British Virgin Islands'='British Virgin Islands(UK)'"),
-         COUNTRY= recode(COUNTRY, "'Cook Islands'='Cook Islands (New Zealand)'"),
-         COUNTRY= recode(COUNTRY, "'Falkland Islands'='Falkland Islands (UK)'"),
-         COUNTRY= recode(COUNTRY, "'French Polynesia'='French Polynesia (France)'"), 
-         COUNTRY= recode(COUNTRY, "'French Southern and Antarctic Lands'='French Southern & Antarctic Lands (France)'"), 
-         COUNTRY= recode(COUNTRY, "'Gibraltar'='Gibraltar (UK)'"), 
-         COUNTRY= recode(COUNTRY, "'Greenland'='Greenland (Denmark)'"), 
-         COUNTRY= recode(COUNTRY, "'Guam'='Guam (US)'"), 
-         COUNTRY= recode(COUNTRY, "'Guernsey'='Guernsey (UK)'"), 
-         COUNTRY= recode(COUNTRY, "'Guinea Bissau'='Guinea-Bissau'"),
-         COUNTRY= recode(COUNTRY, "'Montserrat'='Guernsey (UK)'"),
-         COUNTRY= recode(COUNTRY, "'Guernsey'='Montserrat (UK)'"),
-         COUNTRY= recode(COUNTRY, "'New Caledonia'='New Caledonia (France)'"),
-         COUNTRY= recode(COUNTRY, "'Norfolk Island'='Norfolk Island (Australia)'"),
-         COUNTRY= recode(COUNTRY, "'Northern Mariana Islands'='Northern Mariana Islands (US)'"),
-         COUNTRY= recode(COUNTRY, "'Palau'='Palau (US)'"),
-         COUNTRY= recode(COUNTRY, "'Pitcairn Islands'='Pitcairn Islands (UK)'"),
-         COUNTRY= recode(COUNTRY, "'Puerto Rico'='Puerto Rico (US)'"),
-         COUNTRY= recode(COUNTRY, "'Republic of Congo'='Democratic Republic of the Congo'"),
-         COUNTRY= recode(COUNTRY, "'Republic of Serbia'='Serbia'"),
-         COUNTRY= recode(COUNTRY, "'Saint Helena'='St. Helena (UK)'"),
-         COUNTRY= recode(COUNTRY, "'Saint Lucia'='St. Lucia'"),
-         COUNTRY= recode(COUNTRY, "'Saint Vincent and the Grenadines'='St. Vincent and the Grenadines'"),
-         COUNTRY= recode(COUNTRY, "'Samoa'='Western Samoa'"),
-         COUNTRY= recode(COUNTRY, "'South Georgia and South Sandwich Islands'='South Georgia and the South Sandwich Is (UK)'"),
-         COUNTRY= recode(COUNTRY, "'The Bahamas'='Bahamas'"),
-         COUNTRY= recode(COUNTRY, "'Timor-Leste'='East Timor'"),
-         COUNTRY= recode(COUNTRY, "'Turks and Caicos Islands'='Turks and Caicos Islands (UK)'"),
-         COUNTRY= recode(COUNTRY, "'United Republic of Tanzania'='Tanzania'"),
-         COUNTRY= recode(COUNTRY, "'United States of America'='United States'"),
-         COUNTRY= recode(COUNTRY, "'United States Virgin Islands'='American Virgin Islands (US)'"))
-unique(species.Bis[!(species.Bis$COUNTRY %in% nc$COUNTRY), ]$COUNTRY)
-```
-On met tout les "NA" sous forme NA et on colle les coordonnées des polygones de chaque pays :
-```{r}
-species.Coord <- species.Bis %>% mutate(COUNTRY= recode(COUNTRY, "'NA'=NA")) %>% left_join(nc) %>% rename()
-sum(is.na(species.Coord$COUNTRY))
-```
--> Je ne dois pas avoir un pays = une couleur 
-
-# Utilisation des points 
 
