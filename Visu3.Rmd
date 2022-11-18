@@ -1,0 +1,77 @@
+---
+title: "Visu3"
+author: "Marion M. & Armelle L."
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+```{r}
+packages <- c("ggplot2", "gridExtra", "dplyr", "tidyverse", "readxl", "ggridges")
+install.packages(setdiff(packages, rownames(installed.packages())))
+
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(tidyverse)
+library(readxl)
+library(ggridges)
+```
+
+# Data 
+
+```{r}
+species <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
+species <- species %>% mutate(Species1 = as.factor(Species1), Family1 = as.factor(Family1), Order1 = as.factor(Order1))
+```
+On utilise uniquement les variables `Species1` et `Mass`.
+
+```{r}
+species.1 <- species %>% select(Species1, Mass) %>% rename(species = Species1)
+```
+
+# Histogramme classique 
+
+```{r}
+species.1 %>% filter(Mass < 500) %>% ggplot() +
+  aes(x = Mass) +geom_histogram(bins = 200) + theme_minimal()
+```
+# Masse ~ Order
+```{r}
+species.2 <- species %>% select(Species1, Mass, Order1) %>% rename(species = Species1, order = Order1)
+```
+
+```{r}
+seuil <- species.2 %>% group_by(order) %>% summarise(n = n())
+seuil <- mean(seuil$n)
+
+species.2 %>% group_by(order) %>% mutate(n = n()) %>% filter(n > seuil) %>% select(species, Mass, order) %>% distinct() %>% filter(Mass < 500) %>% 
+  ggplot()+
+  aes(x = Mass, y = order, fill = order)+
+  geom_density_ridges() +
+  theme_ridges() +
+  theme(legend.position = "none")
+
+```
+# Masse ~ Family
+
+On prend 10% des espèces étant les plus présentes en terme d'effectifs dans le jeu : 
+```{r}
+species.3 <- species %>% select(Species1, Mass, Family1) %>% rename(species = Species1, family = Family1)
+```
+
+```{r}
+seuil <- species.3 %>% group_by(family) %>% summarise(n = n())
+seuil <- quantile(seuil$n, prob = 0.90)
+
+species.3 %>% group_by(family) %>% mutate(n = n()) %>% filter(n > seuil) %>% select(species, Mass, family) %>% distinct() %>% filter(Mass < 500) %>% 
+  ggplot()+
+  aes(x = Mass, y = family, fill = family)+
+  geom_density_ridges() +
+  theme_ridges() +
+  theme(legend.position = "none")
+
+```
