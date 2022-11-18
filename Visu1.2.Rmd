@@ -1,0 +1,107 @@
+---
+title: "Visu1.2"
+output: html_document
+date: "2022-11-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE}
+packages <- c("phytools", "readxl", "rgdal", "rgeos", "sf", "RColorBrewer", "ggplot2", "gridExtra", "dplyr","ggExtra","grid", "gridExtra", "tidyverse", "extrafont")
+install.packages(setdiff(packages, rownames(installed.packages())))
+
+library(phytools)
+library(readxl)
+require(rgdal)
+library(rgeos)
+library(sf)
+library(RColorBrewer)
+library(ggplot2)
+library(dplyr)
+library(ggExtra)
+library(grid)
+library(gridExtra)
+library(tidyverse)
+library(showtext)
+library(extrafont)
+```
+
+## Import et sélection 
+
+```{r message=FALSE, warning=FALSE}
+# Grille de Behrman
+grid <- rgdal::readOGR("data/spatial/BehrmannMeterGrid_WGS84_land.shp")
+
+# Dictionnaire géographique Birdlife 
+rangeData<-read.csv("data/spatial/AllSpeciesBirdLifeMaps2019.csv")
+```
+
+## Pre-processing
+
+```{r}
+# projection de Behrmann
+P4S.Behr <- CRS("+proj=cea +lon_0=0 +lat_ts=30 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs")
+gridB<-spTransform(grid,P4S.Behr)
+gridB.sf <- st_as_sf(gridB)
+gridB.sf$WorldID <-as.factor(as.character(gridB.sf$WorldID))
+
+# Range data
+rangeData$WorldID <-as.factor(as.character(rangeData$WorldID))
+```
+
+# Carte : répartition de la richesse spécifique
+
+```{r}
+# compter le nombre d'espèces par cellule
+n_sp <- rangeData %>% 
+  select(Species, WorldID) %>% 
+  group_by(WorldID) %>%
+  dplyr::summarise(n.sp = length(unique(Species))) 
+
+
+# associer n_sp à m'objet spatiale
+gridB.sf <-gridB.sf %>% 
+  select(-count, -sum, -mean, -min, -max) 
+species_map <-left_join(n_sp, gridB.sf)
+```
+
+```{r}
+# On créé des palettes de couleurs
+colors<-c(brewer.pal(9,"PuBu")[-1])
+colors<-colorRampPalette(colors)(50)
+# Typographie
+loadfonts(device = "win")
+font_add_google("Montserrat")
+```
+
+```{r, warning=FALSE}
+#text2 = textGrob("", x = 0.02, y=1, just="left",gp=gpar(fontsize=9))
+
+c <- ggplot(species_map) +
+  geom_sf(aes(geometry = geometry, fill = n.sp, color = n.sp)) +
+  scale_colour_gradientn(colours = colors, name = "Richesse spécifique") +
+  scale_fill_gradientn(colours = colors, name = "Richesse spécifique", 
+                       guide=guide_colourbar(title.position = "top", 
+                                             direction = "horizontal",
+                                             ticks = FALSE)) +
+  guides(color = FALSE, scale = "none") +
+  theme_void() +
+  labs(title = "Distribution de la richesse en espèces d'oiseaux", 
+       subtitle = "selon les données de BirdLife")+
+  theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
+        legend.position=c(0.18, 0.18), 
+        legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
+        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.background = element_rect(fill = "#f5f5f2", color = NA), 
+        #legend.key.height = unit(2.5, "mm")
+  )
+c
+
+# b <- arrangeGrob(p, text,nrow = 2, heights = unit(c(2, .25),c("null", "null")))
+# grid.newpage()
+# grid.draw(b)
+```
