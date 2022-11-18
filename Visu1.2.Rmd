@@ -8,10 +8,6 @@ date: "2022-11-18"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ```{r message=FALSE}
 packages <- c("phytools", "readxl", "rgdal", "rgeos", "sf", "RColorBrewer", "ggplot2", "gridExtra", "dplyr","ggExtra","grid", "gridExtra", "tidyverse", "extrafont")
 install.packages(setdiff(packages, rownames(installed.packages())))
