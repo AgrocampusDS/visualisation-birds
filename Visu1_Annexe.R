@@ -104,8 +104,8 @@ colors<-colorRampPalette(colors)(50)
 # Carte 
 val_med <- gridB@data %>% select(HWI_med) %>% filter(HWI_med != "NA")
 g1 <- ggplot(gridB.sf) +
-  geom_sf(aes(fill = col.HWI_med, color = col.HWI_med)) +
-  scale_colour_gradientn(colours = colors) +
+  geom_sf(aes(fill = col.HWI_med)) +
+  #scale_colour_gradientn(colours = colors) +
   scale_fill_gradientn(colours = colors, breaks = seq(0, max(val_med),length.out=6), name = "Taille de l'aile") +
   theme_void()+
   theme(legend.position="bottom", 
