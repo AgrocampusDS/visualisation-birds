@@ -60,7 +60,26 @@ species <- species %>% select(Species1, Primary.Lifestyle, Trophic.Niche, Mass) 
   mutate(Primary.Lifestyle = as.factor(Primary.Lifestyle), Trophic.Niche = as.factor(Trophic.Niche))
 ```
 
-## Cartes
+## Visualisation 1 : Cartes
+
+# Répartition de la richesse spécifique
+
+```{r}
+# compter le nombre d'espèces par cellule
+n_sp <- rangeData %>% 
+  select(Species, WorldID) %>% 
+  group_by(WorldID) %>%
+  dplyr::summarise(n.sp = length(unique(Species))) 
+
+# transformer grid en objet sf
+gridB <-st_as_sf(gridB)
+gridB$WorldID <-as.factor(as.character(gridB$WorldID))
+
+# associer n_sp à m'objet spatiale
+species_map <-left_join(gridB, rangeData)
+```
+
+# Répartition de la masse corporelle
 
 ```{r}
 # On associe à chaque espèce répertoriée dans le dico géographique sa masse
