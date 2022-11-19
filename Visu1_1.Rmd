@@ -1,0 +1,214 @@
+---
+title: "Visu1.1"
+author: "Marion M. & Armelle L."
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE}
+packages <- c("phytools", "readxl", "rgdal", "rgeos", "sf", "RColorBrewer", "ggplot2", "gridExtra", "dplyr","ggExtra","grid", "gridExtra", "tidyverse", "extrafont", "plotly")
+install.packages(setdiff(packages, rownames(installed.packages())))
+
+library(phytools)
+library(readxl)
+require(rgdal)
+library(rgeos)
+library(sf)
+library(RColorBrewer)
+library(ggplot2)
+library(dplyr)
+library(ggExtra)
+library(grid)
+library(gridExtra)
+library(tidyverse)
+library(showtext)
+library(extrafont)
+library(plotly)
+```
+
+OBJECTIF : Carte de la répartition de la masse corporelle
+
+## Import et sélection 
+
+```{r message=FALSE, warning=FALSE}
+# Traits par espèce BirdLife
+species <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
+# Grille de Behrman
+grid <- rgdal::readOGR("data/spatial/BehrmannMeterGrid_WGS84_land.shp")
+# Polygones des pays du monde
+countriesGeo <- rgdal::readOGR("data/spatial/all_countries.shp")
+# Dictionnaire géographique Birdlife 
+rangeData<-read.csv("data/spatial/AllSpeciesBirdLifeMaps2019.csv")
+```
+
+## Pre-processing
+
+```{r}
+# projection de Behrmann
+P4S.Behr <- CRS("+proj=cea +lon_0=0 +lat_ts=30 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs")
+gridB<-spTransform(grid,P4S.Behr)
+countries <- spTransform(countriesGeo,P4S.Behr)
+# simplification
+countriesS <- gSimplify(countries, tol=10000,topologyPreserve=TRUE)
+countriesS2 <- st_as_sf(countriesS)
+
+# selection variables et nettoyage
+species <- species %>% select(Species1, Primary.Lifestyle, Trophic.Niche, Mass) %>% 
+  na.omit() %>% 
+  mutate(Primary.Lifestyle = as.factor(Primary.Lifestyle), Trophic.Niche = as.factor(Trophic.Niche))
+```
+
+## Carte
+
+```{r}
+# On associe à chaque espèce répertoriée dans le dico géographique sa masse
+rangeData <- rangeData %>% select(Species, WorldID) %>% 
+  merge(y = species[, c("Species1", "Mass")], by.x = "Species", by.y = "Species1") %>% 
+  na.omit()
+
+# On récupère les valeurs médianes de la masse par pays (par ID)
+med.C <- rangeData %>% group_by(WorldID) %>% 
+  mutate(masse_med = median(Mass)) %>% 
+  select(-Mass, -Species) %>% 
+  distinct()
+
+# on implémente dans l'objet shapefile 
+gridB@data <- gridB@data %>% select(-count, -sum, -mean, -min, -max)
+gridB@data <- left_join(gridB@data, med.C)
+
+
+# On construit un gradient de couleurs
+# Pour tenir compte de la densité et non pas de la somme d'individus (les masses allant de 22g à 111kg), on construit des groupes d'intervalles. On construit les 50 quantiles (0%, 2%, 4%, ...) et le groupe 1 correspond au premier quantile (un seul individu), le groupe 2 aux individus qui ne sont pas dans le groupe 1 mais dans le second quantile, le groupe 3 aux individus du troisième quantile mais pas dans le groupe 2, etc...
+
+gridB@data <- gridB@data %>% 
+  mutate(col = findInterval(masse_med, quantile(masse_med,probs=seq(0,1,0.02),na.rm=T), all.inside = TRUE)) %>% 
+  distinct()
+
+gridB.sf <- st_as_sf(gridB)
+```
+
+```{r}
+# On créé des palettes de couleurs
+colors<-c(brewer.pal(9,"PuBu")[-1])
+colors<-colorRampPalette(colors)(50)
+# Typographie
+loadfonts(device = "win")
+font_add_google("Montserrat")
+```
+
+```{r warning=FALSE}
+text = textGrob("Aide à la lecture : les espèces associées au groupe 10 correspond au groupe d'oiseaux dont la masse est supérieure à 18% \ndes individus mais inférieure aux 20% suivants. Le 50ème groupe correspond au dernier pourcentage d'individus ayant la\n plus forte masse.", x = 0.02, y=1, just="left",gp=gpar(fontsize=9))
+
+p <- gridB.sf %>% rename(Masse = col) %>%  
+  ggplot() +
+  geom_sf(aes(fill = Masse, color = Masse)) +
+  scale_colour_gradientn(colours = colors, name = "Groupe associé à la masse",
+                         guide=guide_colourbar(title.position = "top", 
+                                             direction = "horizontal",
+                                             ticks = FALSE)) +
+  scale_fill_gradientn(colours = colors) +
+  guides(fill = FALSE, scale = "none") +
+  theme_void() +
+  labs(title = "Répartition géographique de la masse des oiseaux", 
+       subtitle = "selon les données de BirdLife")+
+  theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
+        legend.position=c(0.18, 0.18), 
+        legend.title = element_text(size=8, family="Montserrat", face="bold", vjust = 0.8),
+        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.background = element_rect(fill = "#f5f5f2", color = NA), 
+        legend.key.height = unit(2.5, "mm")
+  )
+
+b <- arrangeGrob(p, text,nrow = 2, heights = unit(c(2, .25),c("null", "null")))
+grid.newpage()
+grid.draw(b)
+```
+
+Afin de d'aider la lecture de la légende :
+
+```{r}
+gridB.sf  %>% mutate(grp=as.factor(col)) %>% filter(grp == c("10","20", "30", "40", "43", "45", "47", "50")) %>% ggplot() +
+  aes(x = masse_med,y=grp, fill=stat(x)) +
+  geom_density_ridges_gradient()+
+  scale_fill_gradientn(colours = colors, name = "", 
+                       guide=guide_colourbar(title.position = "bottom", 
+                                             direction = "horizontal",
+                                             ticks = FALSE))+
+  theme_ridges() +
+  labs(title = "Densité des groupes associés à la masse")+
+  theme(plot.title = element_text(hjust = 0.2, vjust=3, size = 15, family="Montserrat", face="bold"),
+        plot.margin = unit(c(1,0,1,0), "cm"),
+        legend.position=c(0.02, -0.07),
+        legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
+        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.background = element_rect(fill = "#f5f5f2", color = NA), 
+        legend.margin = margin(6, 6, 6, 6),
+        legend.key.height = unit(5, "mm"), 
+        legend.key.width =  unit(3.2, "cm"),
+        axis.text.x = element_blank()
+  )+
+  ylab("Groupe")+
+  xlab("")
+
+```
+
+```{r}
+gridB.sf %>% filter(masse_med < 10000) %>% 
+  ggplot() +
+  aes(x = masse_med,y=..density.., fill=stat(x)) +
+  geom_density_ridges_gradient()+
+  scale_fill_gradientn(colours = colors[1: round(1/3*length(colors))], name = "",
+                       guide=guide_colourbar(title.position = "bottom", 
+                                             direction = "horizontal",
+                                             ticks = FALSE))+
+  theme_ridges() +
+  labs(title = "Zoom sur la densité de la masse", subtitle = "pour une masse inférieure à 10kg")+
+  theme(plot.title = element_text(hjust = 0.18, vjust=2, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
+        plot.margin = unit(c(1,0,1,0), "cm"),
+        legend.position=c(0.02, -0.2),
+        legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
+        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.background = element_rect(fill = "#f5f5f2", color = NA), 
+        legend.margin = margin(6, 6, 6, 6),
+        legend.key.height = unit(5, "mm"), 
+        legend.key.width =  unit(3, "cm"),
+        axis.text.x = element_blank()
+  )+
+  ylab("Densité")+
+  xlab("")
+```
+
+# Essaie echelle logarithmique
+```{r}
+gridB.sf %>% select(masse_med, col) %>% mutate(log_mass=log(masse_med)) %>% rename(Masse = col) %>%  
+  ggplot() +
+  geom_sf(aes(fill = log_mass, color = log_mass)) +
+  scale_colour_gradientn(colours = colors) +
+  scale_fill_gradientn(colours = colors, name = "Groupe associé à la masse",
+                       guide=guide_colourbar(title.position = "top", 
+                                             direction = "horizontal",
+                                             ticks = FALSE)) +
+  guides(color = FALSE, scale = "none") +
+  theme_void() +
+  labs(title = "Répartition géographique de la masse des oiseaux", 
+       subtitle = "selon les données de BirdLife")+
+  theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
+        legend.position=c(0.18, 0.18), 
+        legend.title = element_text(size=8, family="Montserrat", face="bold", vjust = 0.8),
+        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.background = element_rect(fill = "#f5f5f2", color = NA), 
+        legend.key.height = unit(2.5, "mm")
+  )
+
+```
+

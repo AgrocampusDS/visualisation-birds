@@ -8,7 +8,8 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Packages 
+# Packages
+
 ```{r}
 packages <- c("ggplot2", "gridExtra", "dplyr", "tidyverse", "readxl", "ggridges")
 install.packages(setdiff(packages, rownames(installed.packages())))
@@ -19,17 +20,20 @@ library(dplyr)
 library(tidyverse)
 library(readxl)
 library(ggridges)
+library(viridis)
 ```
 
-# Data 
+# Data
 
 ```{r}
 SPECIES <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
 species <- SPECIES %>% mutate(Species1 = as.factor(Species1), Family1 = as.factor(Family1), Order1 = as.factor(Order1), Lifestyle = as.factor(Primary.Lifestyle))
 ```
-# Histogramme classique 
+
+# Histogramme classique
 
 On utilise uniquement les variables `Species1` et `Mass`.
+
 ```{r}
 species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 1000) %>% 
   ggplot() +
@@ -72,8 +76,7 @@ species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mas
   )
 ```
 
-# Masse ~ Lifestyle
-
+# Masse \~ Lifestyle
 
 ```{r}
 #couleurs 
@@ -102,7 +105,8 @@ species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>%
         panel.background = element_rect(fill = "#f5f5f2", color = NA))
 
 ```
-On voit alors que la classe `Aquatique` se distingue totalement des autres. 
+
+On voit alors que la classe `Aquatique` se distingue totalement des autres.
 
 Idée : comparer les traits médians des individus au style de vie aquatique versus tout les autres
 
@@ -110,10 +114,10 @@ Idée : comparer les traits médians des individus au style de vie aquatique ver
 
 ```
 
+## TRAVAUX SUPP
 
+# Masse \~ Order
 
-## TRAVAUX SUPP 
-# Masse ~ Order
 ```{r}
 species.2 <- species %>% select(Species1, Mass, Order1) %>% rename(species = Species1, order = Order1)
 
@@ -128,7 +132,9 @@ species.2 %>% group_by(order) %>% mutate(n = n()) %>% filter(n > seuil) %>% sele
   theme(legend.position = "none")
 
 ```
-# Masse ~ Family
+
+# Masse \~ Family
+
 ```{r}
 On prend 10% des espèces étant les plus présentes en terme d'effectifs dans le jeu :
 species.3 <- species %>% select(Species1, Mass, Family1) %>% rename(species = Species1, family = Family1)

@@ -14,9 +14,10 @@ params:
   setup_path: ../resources/
 ---
 
+```{=html}
 <style>                     
 .navbar {
-  background-color:#46ACC8;
+  background-color:#f5f5f2;
   border-color:#46ACC8;
 }
 .navbar-brand {
@@ -24,9 +25,8 @@ color:black!important;
 }
 
 
-</style>   
-
-
+</style>
+```
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(phytools)
@@ -64,15 +64,15 @@ countriesS <- gSimplify(countries, tol=10000,topologyPreserve=TRUE)
 countriesS2 <- st_as_sf(countriesS)
 ```
 
-Column {.tabset .tabset-fade}
------------------------------------------------------------------------
+## Column {.tabset .tabset-fade}
 
 # Cartes
 
-Column {data-width=650}
------------------------------------------------------------------------
+## Column {data-width="650"}
 
-### Répartition de la masse corporelle
+## Répartition de la masse corporelle
+
+### Carte
 
 ```{r cache=TRUE}
 # selection variables et nettoyage
@@ -143,8 +143,38 @@ grid.newpage()
 grid.draw(b)
 ```
 
-## Répartition de la richesse spécifique 
+### Histogramme
 
+```{r}
+gridB.sf  %>% mutate(grp=as.factor(col)) %>% filter(masse_med < 1000) %>% ggplot() +
+  aes(x = masse_med,y=..density.., fill=..density..) +
+  geom_density_ridges_gradient()+
+  scale_fill_gradientn(colours = colors, name = "", 
+                       guide=guide_colourbar(title.position = "top", 
+                                             direction = "vertical",
+                                             ticks = FALSE, 
+                                             label.position = "left"))+
+  theme_ridges() +
+  labs(title = "Densité des groupes associés à la masse", subtitle = "pour des masses inférieures à 1kg")+
+  theme(plot.title = element_text(hjust = 0.2, vjust=3, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=5, family="Montserrat", face="italic"),
+        plot.margin = unit(c(1,0,1,1.5), "cm"),
+        legend.position=c(-0.15, 0.5),
+        legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
+        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.background = element_rect(fill = "#f5f5f2", color = NA), 
+        legend.margin = margin(6, 6, 6, 6),
+        legend.key.height = unit(15.5, "mm"), 
+        legend.key.width =  unit(0.5, "cm"),
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank()
+  )+
+  ylab("")+
+  xlab("")
+```
+
+## Répartition de la richesse spécifique
 
 ```{r}
 
@@ -165,7 +195,7 @@ species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mas
   geom_histogram(bins = 200) + theme_minimal()
 ```
 
-## Mass ~ Lifestyle
+## Mass \~ Lifestyle
 
 ```{r}
 species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% filter(Mass < 500) %>% 
@@ -175,4 +205,3 @@ species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>%
   theme_ridges() +
   theme(legend.position = "none")
 ```
-
