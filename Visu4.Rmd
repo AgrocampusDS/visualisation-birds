@@ -1,0 +1,43 @@
+---
+title: "Visu4"
+output: html_document
+date: "2022-11-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+```{r}
+packages <- c("ggplot2", "gridExtra", "dplyr", "tidyverse", "readxl", "ggridges")
+install.packages(setdiff(packages, rownames(installed.packages())))
+
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(tidyverse)
+library(readxl)
+library(ggridges)
+```
+
+```{r}
+SPECIES <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
+species <- SPECIES %>% mutate(Species1 = as.factor(Species1), Family1 = as.factor(Family1), Order1 = as.factor(Order1), Lifestyle = as.factor(Primary.Lifestyle))
+```
+
+```{r}
+species %>% select(Lifestyle, Mass) %>% filter(Mass < 1000) %>% 
+  ggplot() +
+  aes(x = Lifestyle, y=Mass) +
+  geom_boxplot(aes(x = Lifestyle, y=Mass, fill = Lifestyle)) + 
+  labs(title = "Répartition de la masse par mode vie", 
+       subtitle = "pour toute les espèces dont la masse est inférieure à 1kg")+
+  xlab("Mode de vie")+
+  ylab("Masse (g)")+
+  theme(plot.title = element_text(hjust = 0.05, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=0, family="Montserrat"),
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA)
+  )
+```
