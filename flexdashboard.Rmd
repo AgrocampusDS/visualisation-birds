@@ -7,7 +7,7 @@ output:
     orientation: columns
     vertical_layout: fill
     navbar:
-      - { title: "Moodle", href: "https://tice.agrocampus-ouest.fr/course/view.php?id=6726", align: left }
+      - { title: "Source", href: "https://tice.agrocampus-ouest.fr/course/view.php?id=6726", align: left }
       - { icon: "fa-twitter", href: "https://twitter.com/marie_etienne", align: right }
       - { icon: "fa-linkedin", href: "https://www.linkedin.com/in/marie-etienne-818a7115/", align: right }
 params:
@@ -27,6 +27,7 @@ color:black!important;
 
 </style>
 ```
+
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(phytools)
@@ -41,10 +42,10 @@ library(ggExtra)
 library(grid)
 library(gridExtra)
 library(tidyverse)
-library(showtext)
 library(extrafont)
 library(plotly)
 library(ggridges)
+library(showtext)
 
 # Traits par espèce BirdLife
 SPECIES <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
@@ -113,25 +114,24 @@ loadfonts(device = "win")
 font_add_google("Montserrat")
 
 # Caption
-text = textGrob("Aide à la lecture : une couleur pour 10 désigne le groupe d'oiseaux dont la masse est supérieure à 18% des\n individus mais inférieure aux 20% suivants. Une couleur pour 50 correspond au dernier pourcentage d'individus ayant la \n plus forte masse.", x = 0.02, y=1, just="left",gp=gpar(fontsize=9))
+text = textGrob("Aide à la lecture : les espèces associées au groupe 10 correspond au groupe d'oiseaux dont la masse est supérieure à 18% \ndes individus mais inférieure aux 20% suivants. Le 50ème groupe correspond au dernier pourcentage d'individus ayant la\n plus forte masse.", x = 0.02, y=1, just="left",gp=gpar(fontsize=9))
 
-# Map
 p <- gridB.sf %>% rename(Masse = col) %>%  
   ggplot() +
   geom_sf(aes(fill = Masse, color = Masse)) +
-  scale_colour_gradientn(colours = colors, name = "Masse") +
-  scale_fill_gradientn(colours = colors, name = "Masse", 
-                       guide=guide_colourbar(title.position = "top", 
+  scale_colour_gradientn(colours = colors, name = "Groupe associé à la masse",
+                         guide=guide_colourbar(title.position = "top", 
                                              direction = "horizontal",
                                              ticks = FALSE)) +
-  guides(color = FALSE, scale = "none") +
+  scale_fill_gradientn(colours = colors) +
+  guides(fill = FALSE, scale = "none") +
   theme_void() +
   labs(title = "Répartition géographique de la masse des oiseaux", 
        subtitle = "selon les données de BirdLife")+
   theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
         legend.position=c(0.18, 0.18), 
-        legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
+        legend.title = element_text(size=8, family="Montserrat", face="bold", vjust = 0.8),
         plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
         panel.background = element_rect(fill = "#f5f5f2", color = NA),
         legend.background = element_rect(fill = "#f5f5f2", color = NA), 
@@ -143,41 +143,112 @@ grid.newpage()
 grid.draw(b)
 ```
 
-### Histogramme
+### Histogramme associé
 
 ```{r}
-gridB.sf  %>% mutate(grp=as.factor(col)) %>% filter(masse_med < 1000) %>% ggplot() +
-  aes(x = masse_med,y=..density.., fill=..density..) +
+gridB.sf %>% filter(masse_med < 10000) %>% 
+  ggplot() +
+  aes(x = masse_med,y=..density.., fill=stat(x)) +
   geom_density_ridges_gradient()+
-  scale_fill_gradientn(colours = colors, name = "", 
-                       guide=guide_colourbar(title.position = "top", 
-                                             direction = "vertical",
-                                             ticks = FALSE, 
-                                             label.position = "left"))+
+  scale_fill_gradientn(colours = colors[1: round(1/3*length(colors))], name = "",
+                       guide=guide_colourbar(title.position = "bottom", 
+                                             direction = "horizontal",
+                                             ticks = FALSE))+
   theme_ridges() +
-  labs(title = "Densité des groupes associés à la masse", subtitle = "pour des masses inférieures à 1kg")+
-  theme(plot.title = element_text(hjust = 0.2, vjust=3, size = 15, family="Montserrat", face="bold"),
-        plot.subtitle = element_text(hjust = 0.15, vjust=5, family="Montserrat", face="italic"),
-        plot.margin = unit(c(1,0,1,1.5), "cm"),
-        legend.position=c(-0.15, 0.5),
+  labs(title = "Zoom sur la densité de la masse", subtitle = "pour une masse inférieure à 10kg")+
+  theme(plot.title = element_text(hjust = 0.18, vjust=2, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
+        plot.margin = unit(c(1,0,1,0), "cm"),
+        legend.position=c(0.02, -0.2),
         legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
         plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
         panel.background = element_rect(fill = "#f5f5f2", color = NA),
         legend.background = element_rect(fill = "#f5f5f2", color = NA), 
         legend.margin = margin(6, 6, 6, 6),
-        legend.key.height = unit(15.5, "mm"), 
-        legend.key.width =  unit(0.5, "cm"),
-        axis.text.x = element_blank(), 
-        axis.text.y = element_blank()
+        legend.key.height = unit(5, "mm"), 
+        legend.key.width =  unit(3, "cm"),
+        axis.text.x = element_blank()
   )+
-  ylab("")+
+  ylab("Densité")+
   xlab("")
 ```
 
 ## Répartition de la richesse spécifique
 
+### Carte
 ```{r}
+gridB<-spTransform(grid,P4S.Behr)
 
+# compter le nombre d'espèces par cellule
+n_sp <- rangeData %>% 
+  select(Species, WorldID) %>% 
+  group_by(WorldID) %>%
+  mutate(n.sp = n()) %>% 
+  select(-Species) 
+
+# associer n_sp à m'objet spatiale
+gridB@data <-gridB@data %>% 
+  select(-count, -sum, -mean, -min, -max) 
+gridB@data <-left_join(gridB@data,n_sp)
+
+gridB@data <- gridB@data %>% 
+  mutate(col = findInterval(n.sp, quantile(n.sp,probs=seq(0,1,0.02),na.rm=T), all.inside = TRUE)) %>% 
+  distinct()
+
+gridB.sf <- st_as_sf(gridB)
+
+# Typographie
+loadfonts(device = "win")
+font_add_google("Montserrat")
+
+ggplot(gridB.sf) +
+  geom_sf(aes(geometry = geometry, fill = col, color = col)) +
+  scale_colour_gradientn(colours = colors, name = "Richesse spécifique") +
+  scale_fill_gradientn(colours = colors, name = "Richesse spécifique", 
+                       guide=guide_colourbar(title.position = "top", 
+                                             direction = "horizontal",
+                                             ticks = FALSE)) +
+  guides(color = FALSE, scale = "none") +
+  theme_void() +
+  labs(title = "Distribution de la richesse en espèces d'oiseaux", 
+       subtitle = "selon les données de BirdLife")+
+  theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
+        legend.position=c(0.18, 0.18), 
+        legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
+        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.background = element_rect(fill = "#f5f5f2", color = NA)
+  )
+```
+
+### Histogramme associé
+
+```{r}
+gridB.sf %>% 
+  ggplot() +
+  aes(x = n.sp,y=..density.., fill=stat(x)) +
+  geom_density_ridges_gradient()+
+  scale_fill_gradientn(colours = colors, name = "",
+                       guide=guide_colourbar(title.position = "bottom", 
+                                             direction = "horizontal",
+                                             ticks = FALSE))+
+  theme_ridges() +
+  labs(title = "Densité de la richesse en espèces")+
+  theme(plot.title = element_text(hjust = 0.18, vjust=3, size = 15, family="Montserrat", face="bold"),
+        plot.margin = unit(c(1,0,1,0), "cm"),
+        legend.position=c(0.02, -0.2),
+        legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
+        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.background = element_rect(fill = "#f5f5f2", color = NA), 
+        legend.margin = margin(6, 6, 6, 6),
+        legend.key.height = unit(5, "mm"), 
+        legend.key.width =  unit(3.1, "cm"),
+        axis.text.x = element_blank()
+  )+
+  ylab("Densité")+
+  xlab("")
 ```
 
 # Distribution
@@ -187,21 +258,76 @@ species <- SPECIES %>% mutate(Species1 = as.factor(Species1), Family1 = as.facto
 ```
 
 ## Histogramme global
-
 ```{r}
-species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 500 ) %>% 
+species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 1000) %>% 
   ggplot() +
-  aes(x = Mass) +
-  geom_histogram(bins = 200) + theme_minimal()
+  aes(x = Mass, y=..density..) +
+  geom_histogram(bins = 100, fill ="#664b2c", col ="#999999") + 
+  geom_density(alpha=0.5, fill = "#285928", col = "#999999")+
+  theme_ridges() +
+  labs(title = "Distribution de la masse", 
+       subtitle = "pour toute les espèces dont la masse est inférieure à 1kg")+
+  xlab("Masse (g)")+
+  ylab("Densité")+
+  theme(plot.title = element_text(hjust = 0.05, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=0, family="Montserrat"),
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA)
+  )
 ```
 
-## Mass \~ Lifestyle
+```{r}
+mean <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 100) %>% summarise(m=mean(Mass))
+mean <- mean$m
+
+species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 100) %>% 
+  ggplot() +
+  aes(x = Mass, y=..density..) +
+  geom_histogram(bins = 100, fill ="#664b2c", col ="#999999") + 
+  geom_density(alpha=0.5, fill = "#285928", col = "#999999")+
+  geom_vline(xintercept=mean,linetype="dashed")+
+  annotate("text", label = "Moyenne de \nla masse",x=round(mean)+10, y=0.035)+
+  scale_x_continuous(breaks =c(10,round(mean),50,75,100))+
+  theme_ridges() +
+  labs(title = "Distribution de la masse", 
+       subtitle = "pour toute les espèces dont la masse est inférieure à 100g")+
+  xlab("Masse (g)")+
+  ylab("Densité")+
+  theme(plot.title = element_text(hjust = 0.05, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=0, family="Montserrat"),
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA)
+  )
+```
+
+## Masse ~ Lifestyle
 
 ```{r}
+#couleurs 
+colors<-c("#DCDAEB", "#51abb0", "#95c4aa", "#285928", "#664b2c")
+
 species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% filter(Mass < 500) %>% 
+  mutate(Lifestyle = fct_recode(Lifestyle, "Aérien" = "Aerial"),
+                      Lifestyle = fct_recode(Lifestyle, "Terrestre" = "Terrestrial"), 
+                      Lifestyle = fct_recode(Lifestyle, "Insessoriel" = "Insessorial"),
+                      Lifestyle = fct_recode(Lifestyle, "Aquatique" = "Aquatic"),
+                      Lifestyle = fct_recode(Lifestyle, "Généraliste" = "Generalist")) %>% 
   ggplot()+
   aes(x = Mass, y = Lifestyle, fill = Lifestyle)+
   geom_density_ridges() +
+  scale_x_continuous(breaks =c(25,150,300,500))+
+  xlab("Masse")+
+  ylab("")+
   theme_ridges() +
-  theme(legend.position = "none")
+  scale_fill_manual(values=colors)+
+  labs(title = "Distribution de la masse en fonction du style de vie", 
+       subtitle = "pour toute les espèces dont la masse est inférieure à 500g")+
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = -1, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = -0.35, vjust=0, family="Montserrat"),
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA))
+
 ```
+
+
