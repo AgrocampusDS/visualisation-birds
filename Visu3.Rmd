@@ -20,14 +20,17 @@ library(dplyr)
 library(tidyverse)
 library(readxl)
 library(ggridges)
-library(viridis)
+# library(viridis)
 ```
 
 # Data
 
-```{r}
+```{r warning=FALSE}
 SPECIES <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
-species <- SPECIES %>% mutate(Species1 = as.factor(Species1), Family1 = as.factor(Family1), Order1 = as.factor(Order1), Lifestyle = as.factor(Primary.Lifestyle))
+species <- SPECIES %>% mutate(Species1 = as.factor(Species1), 
+                              Family1 = as.factor(Family1), 
+                              Order1 = as.factor(Order1), 
+                              Lifestyle = as.factor(Primary.Lifestyle))
 ```
 
 # Histogramme classique
@@ -35,28 +38,28 @@ species <- SPECIES %>% mutate(Species1 = as.factor(Species1), Family1 = as.facto
 On utilise uniquement les variables `Species1` et `Mass`.
 
 ```{r}
-species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 1000) %>% 
+g1 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 1000) %>% 
   ggplot() +
   aes(x = Mass, y=..density..) +
   geom_histogram(bins = 100, fill ="#664b2c", col ="#999999") + 
   geom_density(alpha=0.5, fill = "#285928", col = "#999999")+
   theme_ridges() +
   labs(title = "Distribution de la masse", 
-       subtitle = "pour toute les espèces dont la masse est inférieure à 1kg")+
+       subtitle = "pour toutes les espèces dont la masse est inférieure à 1kg")+
   xlab("Masse (g)")+
   ylab("Densité")+
   theme(plot.title = element_text(hjust = 0.05, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.subtitle = element_text(hjust = 0.15, vjust=0, family="Montserrat"),
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
         panel.background = element_rect(fill = "#f5f5f2", color = NA)
-  )
+  ) ; g1
 ```
 
 ```{r}
 mean <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 100) %>% summarise(m=mean(Mass))
 mean <- mean$m
 
-species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 100) %>% 
+g2 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 100) %>% 
   ggplot() +
   aes(x = Mass, y=..density..) +
   geom_histogram(bins = 100, fill ="#664b2c", col ="#999999") + 
@@ -65,15 +68,13 @@ species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mas
   annotate("text", label = "Moyenne de \nla masse",x=round(mean)+10, y=0.035)+
   scale_x_continuous(breaks =c(10,round(mean),50,75,100))+
   theme_ridges() +
-  labs(title = "Distribution de la masse", 
-       subtitle = "pour toute les espèces dont la masse est inférieure à 100g")+
+  labs(title = "Zoom sur toutes les espèces dont la masse est inférieure à 100g")+
   xlab("Masse (g)")+
   ylab("Densité")+
   theme(plot.title = element_text(hjust = 0.05, vjust=0, size = 15, family="Montserrat", face="bold"),
-        plot.subtitle = element_text(hjust = 0.15, vjust=0, family="Montserrat"),
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
         panel.background = element_rect(fill = "#f5f5f2", color = NA)
-  )
+  ) ; g2
 ```
 
 # Masse \~ Lifestyle
@@ -82,7 +83,7 @@ species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mas
 #couleurs 
 colors<-c("#DCDAEB", "#51abb0", "#95c4aa", "#285928", "#664b2c")
 
-species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% filter(Mass < 500) %>% 
+g3 <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% filter(Mass < 500) %>% 
   mutate(Lifestyle = fct_recode(Lifestyle, "Aérien" = "Aerial"),
                       Lifestyle = fct_recode(Lifestyle, "Terrestre" = "Terrestrial"), 
                       Lifestyle = fct_recode(Lifestyle, "Insessoriel" = "Insessorial"),
@@ -91,22 +92,37 @@ species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>%
   ggplot()+
   aes(x = Mass, y = Lifestyle, fill = Lifestyle)+
   geom_density_ridges() +
-  scale_x_continuous(breaks =c(25,150,300,500))+
-  xlab("Masse")+
+  # scale_x_continuous(breaks =c(25,150,300,500))+
+  xlab("Masse (g)")+
   ylab("")+
   theme_ridges() +
   scale_fill_manual(values=colors)+
   labs(title = "Distribution de la masse en fonction du style de vie", 
-       subtitle = "pour toute les espèces dont la masse est inférieure à 500g")+
+       subtitle = "pour toutes les espèces dont la masse est inférieure à 500g")+
   theme(legend.position = "none",
         plot.title = element_text(hjust = -1, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.subtitle = element_text(hjust = -0.35, vjust=0, family="Montserrat"),
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
-        panel.background = element_rect(fill = "#f5f5f2", color = NA))
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        axis.text.y = element_text(colour = c("black", "red", "black", "black", "black"))
+        ) ; g3
 
 ```
 
 On voit alors que la classe `Aquatique` se distingue totalement des autres.
+
+```{r, fig.width=15, fig.height=6, message=FALSE}
+grid.newpage()
+pushViewport(viewport(layout = grid.layout(2, 2)))
+define_region <- function(row, col){
+  viewport(layout.pos.row = row, layout.pos.col = col)
+} 
+
+print(g1, vp=define_region(1, 1))
+print(g2, vp = define_region(2, 1))
+print(g3, vp = define_region(1:2, 2))
+```
+
 
 Idée : comparer les traits médians des individus au style de vie aquatique versus tout les autres
 
@@ -136,7 +152,6 @@ species.2 %>% group_by(order) %>% mutate(n = n()) %>% filter(n > seuil) %>% sele
 # Masse \~ Family
 
 ```{r}
-On prend 10% des espèces étant les plus présentes en terme d'effectifs dans le jeu :
 species.3 <- species %>% select(Species1, Mass, Family1) %>% rename(species = Species1, family = Family1)
 
 seuil <- species.3 %>% group_by(family) %>% summarise(n = n())
