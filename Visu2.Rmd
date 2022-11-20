@@ -1,0 +1,58 @@
+---
+title: "Visu 2"
+output: html_document
+date: "2022-11-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+```{r}
+packages <- c("ggplot2", "gridExtra", "dplyr", "tidyverse", "readxl", "ggridges")
+install.packages(setdiff(packages, rownames(installed.packages())))
+
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(tidyverse)
+library(readxl)
+library(ggridges)
+```
+
+```{r}
+SPECIES <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
+species <- SPECIES %>% 
+  mutate(Lifestyle = as.factor(Primary.Lifestyle)) %>% 
+  mutate(Generalist_specialist = fct_recode(Lifestyle, 
+                                            "Généraliste" = "Generalist", 
+                                            "Spécialiste" = "Aerial",
+                                            "Spécialiste" = "Aquatic", 
+                                            "Spécialiste" = "Insessorial",
+                                            "Spécialiste" = "Terrestrial"),
+         Lifestyle = fct_recode(Lifestyle, "Aérien" = "Aerial"),
+                      Lifestyle = fct_recode(Lifestyle, "Terrestre" = "Terrestrial"), 
+                      Lifestyle = fct_recode(Lifestyle, "Insessoriel" = "Insessorial"),
+                      Lifestyle = fct_recode(Lifestyle, "Aquatique" = "Aquatic"),
+                      Lifestyle = fct_recode(Lifestyle, "Généraliste" = "Generalist"))
+  
+```
+
+```{r}
+species %>% select(Lifestyle, Mass, Generalist_specialist) %>% filter(Mass < 1000) -> species
+
+ggplot(species, aes(x = Lifestyle, y=Mass, fill = Lifestyle)) +
+  geom_boxplot() + 
+  facet_wrap(~Generalist_specialist, scales = "free") +
+  labs(title = "Répartition de la masse par mode vie", 
+       subtitle = "pour toute les espèces dont la masse est inférieure à 1kg")+
+  xlab("Mode de vie")+
+  ylab("Masse (g)")+
+  theme(axis.text.x = element_text(angle = 90),
+                                   plot.title = element_text(hjust = 0.05, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = 0.15, vjust=0, family="Montserrat"),
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA)
+  )
+```

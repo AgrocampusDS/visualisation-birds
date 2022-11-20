@@ -23,7 +23,12 @@ library(ggridges)
 
 ```{r}
 SPECIES <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
-species <- SPECIES %>% mutate(Species1 = as.factor(Species1), Family1 = as.factor(Family1), Order1 = as.factor(Order1), Lifestyle = as.factor(Primary.Lifestyle))
+species <- SPECIES %>% mutate(
+  Species1 = as.factor(Species1), Family1 = as.factor(Family1), Order1 = as.factor(Order1), Lifestyle = as.factor(Primary.Lifestyle),
+  Lifestyle = fct_recode(Lifestyle, "Aérien" = "Aerial"),
+  Lifestyle = fct_recode(Lifestyle, "Terrestre" = "Terrestrial"), 
+  Lifestyle = fct_recode(Lifestyle, "Insessoriel" = "Insessorial"),
+  Lifestyle = fct_recode(Lifestyle, "Généraliste" = "Generalist"))
 ```
 
 ```{r}

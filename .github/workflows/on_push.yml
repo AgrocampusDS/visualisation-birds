@@ -14,7 +14,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       - name: Generate slides
-        run: Rscript -e "rmarkdown::render('flexdashboard.Rmd', output_dir = 'build')"
+        run: |
+          apt install libarchive-dev
+          Rscript -e "install.packages(c('archive', 'phytools', 'readxl', 'RColorBrewer', 'ggExtra', 'grid', 'gridExtra', 'extrafont', 'ggridges', 'showtext'))"
+          Rscript -e "rmarkdown::render('flexdashboard.Rmd', output_dir = 'build')"
       - name: GitHub Pages action
         uses: peaceiris/actions-gh-pages@v3
         with:
