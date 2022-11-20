@@ -65,12 +65,10 @@ countriesS <- gSimplify(countries, tol=10000,topologyPreserve=TRUE)
 countriesS2 <- st_as_sf(countriesS)
 ```
 
-## Column {.tabset .tabset-fade}
-
 # Cartes
 
-## Column {data-width="650"}
-
+## Column 
+<!-- {data-width="650"} -->
 ## Répartition de la masse corporelle
 
 ### Carte
@@ -146,7 +144,7 @@ grid.draw(b)
 ### Histogramme associé
 
 ```{r}
-gridB.sf %>% filter(masse_med < 10000) %>% 
+p <- gridB.sf %>% filter(masse_med < 10000) %>% 
   ggplot() +
   aes(x = masse_med,y=..density.., fill=stat(x)) +
   geom_density_ridges_gradient()+
@@ -171,6 +169,7 @@ gridB.sf %>% filter(masse_med < 10000) %>%
   )+
   ylab("Densité")+
   xlab("")
+ggplotly(p)
 ```
 
 ## Répartition de la richesse spécifique
@@ -225,7 +224,7 @@ ggplot(gridB.sf) +
 ### Histogramme associé
 
 ```{r}
-gridB.sf %>% 
+p <- gridB.sf %>% 
   ggplot() +
   aes(x = n.sp,y=..density.., fill=stat(x)) +
   geom_density_ridges_gradient()+
@@ -249,6 +248,8 @@ gridB.sf %>%
   )+
   ylab("Densité")+
   xlab("")
+
+ggplotly(p)
 ```
 
 # Distribution
@@ -259,7 +260,7 @@ species <- SPECIES %>% mutate(Species1 = as.factor(Species1), Family1 = as.facto
 
 ## Histogramme global
 ```{r}
-species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 1000) %>% 
+p <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 1000) %>% 
   ggplot() +
   aes(x = Mass, y=..density..) +
   geom_histogram(bins = 100, fill ="#664b2c", col ="#999999") + 
@@ -274,13 +275,14 @@ species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mas
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
         panel.background = element_rect(fill = "#f5f5f2", color = NA)
   )
+ggplotly(p)
 ```
 
 ```{r}
 mean <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 100) %>% summarise(m=mean(Mass))
 mean <- mean$m
 
-species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 100) %>% 
+p <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 100) %>% 
   ggplot() +
   aes(x = Mass, y=..density..) +
   geom_histogram(bins = 100, fill ="#664b2c", col ="#999999") + 
@@ -298,6 +300,7 @@ species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mas
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
         panel.background = element_rect(fill = "#f5f5f2", color = NA)
   )
+ggplotly(p)
 ```
 
 ## Masse ~ Lifestyle
@@ -306,7 +309,7 @@ species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mas
 #couleurs 
 colors<-c("#DCDAEB", "#51abb0", "#95c4aa", "#285928", "#664b2c")
 
-species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% filter(Mass < 500) %>% 
+p <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% filter(Mass < 500) %>% 
   mutate(Lifestyle = fct_recode(Lifestyle, "Aérien" = "Aerial"),
                       Lifestyle = fct_recode(Lifestyle, "Terrestre" = "Terrestrial"), 
                       Lifestyle = fct_recode(Lifestyle, "Insessoriel" = "Insessorial"),
@@ -328,6 +331,7 @@ species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>%
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
         panel.background = element_rect(fill = "#f5f5f2", color = NA))
 
+ggplotly(p)
 ```
 
 
