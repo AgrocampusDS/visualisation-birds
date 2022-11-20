@@ -57,7 +57,8 @@ grid <- rgdal::readOGR("data/spatial/BehrmannMeterGrid_WGS84_land.shp")
 # Polygones des pays du monde
 countriesGeo <- rgdal::readOGR("data/spatial/all_countries.shp")
 # Dictionnaire géographique Birdlife 
-rangeData<-read.csv("data/spatial/AllSpeciesBirdLifeMaps2019.csv")
+archive::archive_extract('data/spatial/AllSpeciesBirdLifeMaps2019.7z')
+rangeData<-read.csv("AllSpeciesBirdLifeMaps2019.csv")
 ```
 
 
