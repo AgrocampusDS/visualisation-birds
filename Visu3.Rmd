@@ -253,20 +253,23 @@ species.traits %>%
 
 ```{r warning=FALSE}
 colors<-c(aquatique, insessorial, aerien, terrestre, generaliste)
+ticksY <-c(-0.50, -0.25, 0.00, 0.25, 0.50)
 
 b1 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Wing.Length)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
-  facet_wrap(~Generalist_specialist, scales = "free", ncol=1)+
-  geom_hline(yintercept = 0, linetype = "dashed", color = "black")+
+  facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
-  ylim(-0.5, 0.5)+
+  scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
+                     labels=expression(-0.50, -0.25, 'Tendance générale : 0.00',0.25,0.50)) +
+  #theme(axis.text.y = element_text(colour = c('black', 'black','red', 'black', 'black')))+
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
+  theme(axis.text.x = element_text(angle= 45,hjust=1))+
   labs(title = "Taille relative de l'aile",x=NULL, y ="")+
   theme(legend.position='none', 
-        axis.text.y = element_text(colour = c("red", "black", "black", "black", "black")),
+        axis.text.y = element_text(colour = c("red", "black", "black", "black","black")),
         plot.margin = unit(c(1,1,1,0), "cm"),
         plot.title = element_text(size = 15, family="Montserrat", face="bold"),
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
@@ -276,7 +279,7 @@ b1 <- species.traits %>%
 b2 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Tarsus.Length)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
-  facet_wrap(~Generalist_specialist, scales = "free", ncol=1)+
+  facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
@@ -295,7 +298,7 @@ b2 <- species.traits %>%
 b3 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Tail.Length)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
-  facet_grid(~Generalist_specialist, scales = "free_y", space = "free_y", cols=1)+
+  facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
@@ -314,7 +317,7 @@ b3 <- species.traits %>%
 b4 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Beak.Length_Culmen)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
-  facet_wrap(~Generalist_specialist, scales = "free", ncol=1)+
+  facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
@@ -333,7 +336,7 @@ b4 <- species.traits %>%
 b5 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Beak.Width)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
-  facet_wrap(~Generalist_specialist, scales = "free", ncol=1)+
+  facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
@@ -347,14 +350,12 @@ b5 <- species.traits %>%
         plot.title = element_text(size = 15, family="Montserrat", face="bold"),
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
         panel.background = element_rect(fill = "#f5f5f2", color = NA),
-  )+
-  geom_vline(xintercept = 0, linetype = "dashed", color = "red")
-
+  )
 
 b6 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Beak.Depth)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
-  facet_wrap(~Generalist_specialist, scales = "free", ncol=1)+
+  facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
