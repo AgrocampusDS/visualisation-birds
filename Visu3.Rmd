@@ -20,6 +20,7 @@ library(dplyr)
 library(tidyverse)
 library(readxl)
 library(ggridges)
+library(grid)
 # library(viridis)
 ```
 
@@ -33,7 +34,17 @@ species <- SPECIES %>% mutate(Species1 = as.factor(Species1),
                               Lifestyle = as.factor(Primary.Lifestyle))
 ```
 
-# Histogramme classique
+# Couleurs 
+```{r}
+aerien <- "#DCDAEB"
+aquatique <- "#51abb0"
+generaliste <- "#95c4aa"
+insessorial <- "#285928"
+terrestre <- "#664b2c"
+colors<-c(aerien, aquatique, generaliste, insessorial, terrestre)
+```
+
+# Masse \~ Lifestyle
 
 On utilise uniquement les variables `Species1` et `Mass`.
 
@@ -41,7 +52,7 @@ On utilise uniquement les variables `Species1` et `Mass`.
 mean <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% summarise(m=mean(Mass))
 mean <- mean$m
 
-g1 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 1000) %>% 
+g1 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 500) %>% 
   ggplot() +
   aes(x = Mass, y=..density..) +
   geom_histogram(bins = 100, fill ="#664b2c", col ="#999999") + 
@@ -52,7 +63,7 @@ g1 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filt
                  label = paste0("Moyenne de la masse\n de l'échantillon : ", as.character(round(mean)))), 
              fill = "#DCDAEB")+
   labs(title = "Distribution de la masse", 
-       subtitle = "zoom sur toutes les espèces dont la masse est inférieure à 1kg")+
+       subtitle = "zoom sur toutes les espèces dont la masse est inférieure à 500g")+
   xlab("Masse (g)")+
   ylab("Densité")+
   theme(plot.title = element_text(hjust = 0.05, vjust=0, size = 15, family="Montserrat", face="bold"),
@@ -70,7 +81,7 @@ g2 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>%
   geom_histogram(bins = 100, fill ="#664b2c", col ="#999999") + 
   geom_density(alpha=0.5, fill = "#285928", col = "#999999")+
   theme_ridges() +
-  xlim(0,100)+
+  xlim(0,500)+
   labs(title = "Zoom sur toutes les espèces dont la masse est inférieure à 100g")+
   xlab("Masse (g)")+
   ylab("Densité")+
@@ -80,16 +91,7 @@ g2 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>%
   ) ; g2
 ```
 
-# Masse \~ Lifestyle
-
 ```{r}
-aerien <- "#DCDAEB"
-aquatique <- "#51abb0"
-generaliste <- "#95c4aa"
-insessorial <- "#285928"
-terrestre <- "#664b2c"
-colors<-c(aerien, aquatique, generaliste, insessorial, terrestre)
-
 g3 <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% 
   mutate(Lifestyle = fct_recode(Lifestyle, "Aérien" = "Aerial"),
                       Lifestyle = fct_recode(Lifestyle, "Terrestre" = "Terrestrial"), 
@@ -118,16 +120,15 @@ g3 <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species
 
 On voit alors que la classe `Aquatique` se distingue totalement des autres.
 
-```{r, fig.width=15, fig.height=6, message=FALSE}
+```{r, fig.width=10, fig.height=6, message=FALSE}
 grid.newpage()
-pushViewport(viewport(layout = grid.layout(2, 2)))
+pushViewport(viewport(layout = grid.layout(2, 1)))
 define_region <- function(row, col){
   viewport(layout.pos.row = row, layout.pos.col = col)
 } 
 
-print(g1, vp=define_region(1, 1))
-print(g2, vp = define_region(2, 1))
-print(g3, vp = define_region(1:2, 2))
+print(g1, vp = define_region(1, 1))
+print(g3, vp = define_region(2, 1))
 ```
 
 
@@ -191,7 +192,6 @@ species.traits %>%
   labs(x=NULL, y ="Taille relative du bec")+
   theme(legend.position='none')
 ```
-
 ```{r  Tarsus.Length}
 species.traits %>% 
   ggplot(aes(x=Lifestyle,y=Tarsus.Length,fill=Lifestyle))+
@@ -232,8 +232,6 @@ species.traits %>%
   labs(x=NULL, y ="Taille relative de la queue")+
   theme(legend.position='none')
 ```
-
-
 
 ## Grid : en quoi les oiseaux aquatiques se démarquent ?
 
@@ -354,10 +352,10 @@ grid.arrange(b1,b2, b3, b4, nrow=1)
 ```{r reg.lineaire, fig.width=15, fig.height=6}
 p1 <- species.traits %>% filter(Mass < 1000) %>% 
   ggplot()+
-  aes(x=Wing.Length, y=Mass, col=class)+
+  aes(x=Wing.Length, y=Mass, col=Lifestyle)+
   geom_point()+
   geom_smooth(method="lm")+
-  scale_color_manual(values=c("#545a61", aquatique))+
+  scale_color_manual(values=colors)+
   theme_ridges()+
   theme(legend.position = "none")
 
