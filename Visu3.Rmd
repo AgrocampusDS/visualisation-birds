@@ -31,7 +31,19 @@ SPECIES <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
 species <- SPECIES %>% mutate(Species1 = as.factor(Species1), 
                               Family1 = as.factor(Family1), 
                               Order1 = as.factor(Order1), 
-                              Lifestyle = as.factor(Primary.Lifestyle))
+                              Lifestyle = as.factor(Primary.Lifestyle)) %>% mutate(Lifestyle = as.factor(Primary.Lifestyle)) %>% 
+  mutate(Generalist_specialist = fct_recode(Lifestyle, 
+                                            "Généraliste" = "Generalist", 
+                                            "Spécialiste" = "Aerial",
+                                            "Spécialiste" = "Aquatic", 
+                                            "Spécialiste" = "Insessorial",
+                                            "Spécialiste" = "Terrestrial"),
+         Lifestyle = fct_recode(Lifestyle, 
+                                "Terrestre" = "Terrestrial",
+                                "Aérien" = "Aerial",
+                                "Insessoriel" = "Insessorial",
+                                "Aquatique" = "Aquatic",
+                                "Généraliste" = "Generalist"))
 ```
 
 # Couleurs 
@@ -92,12 +104,9 @@ g2 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>%
 ```
 
 ```{r}
-g3 <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% 
-  mutate(Lifestyle = fct_recode(Lifestyle, "Aérien" = "Aerial"),
-                      Lifestyle = fct_recode(Lifestyle, "Terrestre" = "Terrestrial"), 
-                      Lifestyle = fct_recode(Lifestyle, "Insessoriel" = "Insessorial"),
-                      Lifestyle = fct_recode(Lifestyle, "Aquatique" = "Aquatic"),
-                      Lifestyle = fct_recode(Lifestyle, "Généraliste" = "Generalist")) %>% 
+g3 <- species %>% 
+  select(Species1, Mass, Lifestyle, Generalist_specialist) %>% 
+  rename(species = Species1) %>% 
   ggplot()+
   aes(x = Mass, y = Lifestyle, fill = Lifestyle)+
   geom_density_ridges() +
@@ -108,6 +117,7 @@ g3 <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species
   labs(title = "Distribution de la masse en fonction du style de vie", 
        subtitle = "zoom sur toutes les espèces dont la masse est inférieure à 500g")+
   xlim(0,500)+
+  facet_wrap(Generalist_specialist~., scales="free", ncol = 1)+
   theme(legend.position = "none",
         plot.title = element_text(hjust = -1, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.subtitle = element_text(hjust = -0.35, vjust=0, family="Montserrat"),
