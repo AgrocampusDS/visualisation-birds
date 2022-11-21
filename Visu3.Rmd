@@ -41,7 +41,7 @@ aquatique <- "#51abb0"
 generaliste <- "#95c4aa"
 insessorial <- "#285928"
 terrestre <- "#664b2c"
-colors<-c(aerien, aquatique, generaliste, insessorial, terrestre)
+colors<-c(aerien, aquatique, insessorial, terrestre, generaliste)
 ```
 
 # Masse \~ Lifestyle
