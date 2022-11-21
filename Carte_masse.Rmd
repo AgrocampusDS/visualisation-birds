@@ -1,5 +1,5 @@
 ---
-title: "Visu1.1"
+title: "Visu1.1 - CARTE MASSE"
 author: "Marion M. & Armelle L."
 output: html_document
 ---
@@ -42,6 +42,7 @@ grid <- rgdal::readOGR("data/spatial/BehrmannMeterGrid_WGS84_land.shp")
 countriesGeo <- rgdal::readOGR("data/spatial/all_countries.shp")
 # Dictionnaire géographique Birdlife 
 archive::archive_extract('data/spatial/AllSpeciesBirdLifeMaps2019.7z')
+rangeData<-read.csv("AllSpeciesBirdLifeMaps2019.csv")
 ```
 
 ## Pre-processing
@@ -99,10 +100,8 @@ loadfonts(device = "win")
 font_add_google("Montserrat")
 ```
 
-```{r warning=FALSE}
-text = textGrob("Aide à la lecture : les espèces associées au groupe 10 correspond au groupe d'oiseaux dont la masse est supérieure à 18% \ndes individus mais inférieure aux 20% suivants. Le 50ème groupe correspond au dernier pourcentage d'individus ayant la\n plus forte masse.", x = 0.02, y=1, just="left",gp=gpar(fontsize=9))
-
-p <- gridB.sf %>% rename(Masse = col) %>%  
+```{r map, warning=FALSE, fig.width=8, fig.height=5}
+p1 <- gridB.sf %>% rename(Masse = col) %>%  
   ggplot() +
   geom_sf(aes(fill = Masse, color = Masse)) +
   scale_colour_gradientn(colours = colors, name = "Groupe associé à la masse",
@@ -115,24 +114,18 @@ p <- gridB.sf %>% rename(Masse = col) %>%
   labs(title = "Répartition géographique de la masse des oiseaux", 
        subtitle = "selon les données de BirdLife")+
   theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.margin = unit(c(0,0,0,0), "cm"),
         plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
         legend.position=c(0.18, 0.18), 
         legend.title = element_text(size=8, family="Montserrat", face="bold", vjust = 0.8),
-        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
-        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent",colour = NA),
         legend.background = element_rect(fill = "#f5f5f2", color = NA), 
         legend.key.height = unit(2.5, "mm")
   )
-
-b <- arrangeGrob(p, text,nrow = 2, heights = unit(c(2, .25),c("null", "null")))
-grid.newpage()
-grid.draw(b)
 ```
-
-Afin de d'aider la lecture de la légende :
-
-```{r}
-gridB.sf  %>% mutate(grp=as.factor(col)) %>% filter(grp == c("10","20", "30", "40", "43", "45", "47", "50")) %>% ggplot() +
+```{r densite essai 1}
+p2 <- gridB.sf  %>% mutate(grp=as.factor(col)) %>% filter(grp == c("10","20", "30", "40", "43", "45", "47", "50")) %>% ggplot() +
   aes(x = masse_med,y=grp, fill=stat(x)) +
   geom_density_ridges_gradient()+
   scale_fill_gradientn(colours = colors, name = "", 
@@ -157,33 +150,36 @@ gridB.sf  %>% mutate(grp=as.factor(col)) %>% filter(grp == c("10","20", "30", "4
   xlab("")
 
 ```
-
-```{r}
-gridB.sf %>% filter(masse_med < 10000) %>% 
+```{r densite essai 2,  fig.width=8, fig.height=3}
+p2.bis <- gridB.sf %>% filter(masse_med < 10000) %>% 
   ggplot() +
   aes(x = masse_med,y=..density.., fill=stat(x)) +
-  geom_density_ridges_gradient()+
+  geom_density_ridges_gradient(size=1.5)+
   scale_fill_gradientn(colours = colors[1: round(1/3*length(colors))], name = "",
                        guide=guide_colourbar(title.position = "bottom", 
                                              direction = "horizontal",
                                              ticks = FALSE))+
   theme_ridges() +
-  labs(title = "Zoom sur la densité de la masse", subtitle = "pour une masse inférieure à 10kg")+
-  theme(plot.title = element_text(hjust = 0.18, vjust=2, size = 15, family="Montserrat", face="bold"),
-        plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
-        plot.margin = unit(c(1,0,1,0), "cm"),
-        legend.position=c(0.02, -0.2),
+  theme(plot.title = element_blank(),
+        plot.margin = unit(c(0.5,0,0.5,0), "cm"),
+        legend.position=c(0.02, -0.15),
         legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
-        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
-        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        panel.background = element_rect(fill = "white",colour = NA),
+        plot.background = element_rect(fill = "white",colour = NA),
         legend.background = element_rect(fill = "#f5f5f2", color = NA), 
         legend.margin = margin(6, 6, 6, 6),
         legend.key.height = unit(5, "mm"), 
-        legend.key.width =  unit(3, "cm"),
+        legend.key.width =  unit(4.3, "cm"),
         axis.text.x = element_blank()
   )+
-  ylab("Densité")+
+  ylab("")+
   xlab("")
+
+```
+
+
+```{r, fig.width=10, fig.height=9}
+grid.arrange(p1, p2, heights=c(5,3))
 ```
 
 # Essaie echelle logarithmique

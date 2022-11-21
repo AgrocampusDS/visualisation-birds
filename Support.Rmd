@@ -1,48 +1,12 @@
 ---
-title: "Masse des oiseaux et richesses d'espèces"
-author: "Armelle L. et Marion M."
-output: 
-  flexdashboard::flex_dashboard:
-    theme: bootstrap
-    vertical_layout: fill
-    orientation: rows
-    navbar:
-      - { title: "Données :", align: right }
-      - { icon: "fa-database", href: "http://datazone.birdlife.org/species/taxonomy", align: right }
-      - { icon: "fa-map", href: "https://giscrack.com/product/download-shapefile-shp-of-all-countries-of-the-world/", align: right }
-params:
-  setup_path: ../resources/
+title: "Support"
+author: "Marion M. & Armelle L."
+date: "2022-11-21"
+output: html_document
 ---
 
-```{=html}
-<style>
-
-.navbar {
-  background-color: #00A064;
-  border-color: #ffffff;
-}
-
-.navbar-brand {
-color:white!important;
-}
-
-.navbar-inverse .navbar-nav > .active > a, .navbar-inverse .navbar-nav > .active > a:hover, .navbar-inverse .navbar-nav > .active > a:focus {
-    color: white;
-    background-color: #97989A;
-    font-weight: bold;
-}
-.fa {
-color: white;
-}
-
-.navbar-inverse .navbar-nav > li > a {
-color: white;
-}
-
-.navbar-inverse .navbar-nav > li > a:hover {
-color: white;
-}
-</style>
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r setup, include=FALSE}
@@ -65,6 +29,7 @@ library(ggridges)
 library(showtext)
 ```
 
+
 ```{r read_data, include = FALSE}
 # Traits par espèce BirdLife
 SPECIES <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
@@ -78,6 +43,8 @@ countriesGeo <- rgdal::readOGR("data/spatial/all_countries.shp")
 archive::archive_extract('data/spatial/AllSpeciesBirdLifeMaps2019.7z')
 rangeData<-read.csv("AllSpeciesBirdLifeMaps2019.csv")
 ```
+
+### Cartes
 
 ```{r pre_process, cache=TRUE}
 # projection de Behrmann
@@ -188,14 +155,14 @@ p2 <- carte1.sf %>% mutate(grp=as.factor(col)) %>% filter(grp == c("10","20", "3
   labs(title = "Densité des groupes associés à la masse")+
   theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.margin = unit(c(0.5,0,0.5,0), "cm"),
-        legend.position=c(0.02, -0.10),
+        legend.position=c(0.02, -0.15),
         legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
         panel.background = element_rect(fill = "white",colour = NA),
         plot.background = element_rect(fill = "white",colour = NA),
         legend.background = element_rect(fill = "#f5f5f2", color = NA), 
         legend.margin = margin(6, 6, 6, 6),
         legend.key.height = unit(5, "mm"), 
-        legend.key.width =  unit(3, "cm"),
+        legend.key.width =  unit(4.4, "cm"),
         axis.text.x = element_blank()
   )+
   ylab("Groupes")+
@@ -236,19 +203,26 @@ p4 <- carte2.sf %>%
   labs(title = "Densité de la richesse en espèces")+
   theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.margin = unit(c(0.5,0,0.5,0), "cm"),
-        legend.position=c(0.02, -0.10),
+        legend.position=c(0.02, -0.15),
         legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
         plot.background = element_rect(fill = "white", color = "#f5f5f2"), 
         panel.background = element_rect(fill = "white", color = NA),
         legend.background = element_rect(fill = "white", color = NA), 
         legend.margin = margin(6, 6, 6, 6),
         legend.key.height = unit(5, "mm"), 
-        legend.key.width =  unit(3, "cm"),
+        legend.key.width =  unit(4.3, "cm"),
         axis.text.x = element_blank()
   )+
   ylab("")+
   xlab("")
 ```
+
+```{r fig.width=10, fig.height=8}
+grid.arrange(p1, p2, heights=c(5,3))
+grid.arrange(p3, p4, heights=c(5,3))
+```
+
+### Densité
 ```{r couleurs}
 aerien <- "#DCDAEB"
 aquatique <- "#51abb0"
@@ -281,10 +255,10 @@ g1 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filt
        subtitle = "zoom sur toutes les espèces dont la masse est inférieure à 500g")+
   xlab("Masse (g)")+
   ylab("Densité")+
-  theme(plot.title = element_text(hjust = 0.1, vjust=0, size = 15, family="Montserrat", face="bold"),
+  theme(plot.title = element_text(hjust = 0.05, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.subtitle = element_text(hjust = 0.15, vjust=0, family="Montserrat"),
-        plot.background = element_rect(fill = "white", color ="#f5f5f2"),
-        panel.background = element_rect(fill = "white", color = NA)
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA)
   )
 
 g2 <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% 
@@ -304,13 +278,19 @@ g2 <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species
        subtitle = "zoom sur toutes les espèces dont la masse est inférieure à 500g")+
   xlim(0,500)+
   theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5, vjust=0, size = 15, family="Montserrat", face="bold"),
-        plot.subtitle = element_text(hjust = 0, vjust=0, family="Montserrat"),
-        plot.background = element_rect(fill = "white", color ="#f5f5f2"),
-        panel.background = element_rect(fill = "white", color = NA),
+        plot.title = element_text(hjust = -1, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.subtitle = element_text(hjust = -0.35, vjust=0, family="Montserrat"),
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
         axis.text.y = element_text(colour = c("black", "red", "black", "black", "black"))
         ) 
 ```
+```{r plot_masse_richesse, fig.height=6}
+grid.arrange(g1, g2)
+```
+
+### Boxplot
+
 ```{r aquatique}
 species.traits <- SPECIES %>% select(Species1, Female, Male, Wing.Length, Beak.Length_Culmen,Beak.Width, Beak.Depth, Tarsus.Length, Tail.Length,  Mass, Primary.Lifestyle, Habitat.Density) %>% rename(species = Species1, Lifestyle=Primary.Lifestyle) %>% 
   mutate(class = fct_recode(Lifestyle, 
@@ -333,7 +313,6 @@ species.traits <- SPECIES %>% select(Species1, Female, Male, Wing.Length, Beak.L
                                 "Généraliste" = "Generalist"),
          Lifestyle = factor(Lifestyle, levels=rev(c("Terrestre","Aérien","Insessoriel", "Généraliste", "Aquatique" )))
          )
-
 colors<-c(aquatique, generaliste, insessorial, aerien, terrestre)
 ticksY <-c(-0.50, -0.25, 0.00, 0.25, 0.50)
 
@@ -348,13 +327,13 @@ b1 <- species.traits %>%
                      labels=expression(-0.50, -0.25, 'Tendance générale',0.25,0.50)) +
   theme(axis.text.y = element_text(colour = 'black'))+
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black"), size = 15))+
+  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black")))+
   labs(title = "Taille relative de l'aile",x=NULL, y ="")+
   theme(legend.position='none', 
         plot.margin = unit(c(1,1,1,0), "cm"),
         plot.title = element_text(size = 18, family="Montserrat", face="bold"),
-        plot.background = element_rect(fill = "white", color ="white"),
-        panel.background = element_rect(fill = "white", color = NA),
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
         strip.text = element_text(size = 15)
   )
 
@@ -374,8 +353,8 @@ b2 <- species.traits %>%
         axis.text.y = element_blank(),
         plot.margin = unit(c(1,1,1,0), "cm"),
         plot.title = element_text(size = 18, family="Montserrat", face="bold"),
-        plot.background = element_rect(fill = "white", color ="white"),
-        panel.background = element_rect(fill = "white", color = NA),
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
         strip.text = element_text(size = 15)
   )
 
@@ -395,8 +374,8 @@ b3 <- species.traits %>%
         axis.text.y = element_blank(),
         plot.margin = unit(c(1,1,1,0), "cm"),
         plot.title = element_text(size = 18, family="Montserrat", face="bold"),
-        plot.background = element_rect(fill = "white", color ="white"),
-        panel.background = element_rect(fill = "white", color = NA),
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
         strip.text = element_text(size = 15)
   )
 
@@ -416,104 +395,16 @@ b4 <- species.traits %>%
         axis.text.y = element_blank(),
         plot.margin = unit(c(1,1,1,0), "cm"),
         plot.title = element_text(size = 18, family="Montserrat", face="bold"),
-        plot.background = element_rect(fill = "white", color ="white"),
-        panel.background = element_rect(fill = "white", color = NA),
+        plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
+        panel.background = element_rect(fill = "#f5f5f2", color = NA),
         strip.text = element_text(size = 15)
   )
 ```
 
-Tableau de bord {data-icon="fas fa-home"}
-===================================== 
-
-Row
--------------------------------------
-    
-### Densité de la masse
-
-```{r}
-g1
-```
-
-### Distribution géographique de la masse
-
-```{r fig.width=10}
-p1
-```
-
-Row 
--------------------------------------
-    
-### Distribution par style de vie
-
-```{r fig.width=8}
-g2
-```
-
-### Distribution géographique du nombre d'espèces
-
-```{r fig.width=10}
-p3
-```
-    
-Portrait géographique {data-icon="fas fa-map"}
-===================================== 
-
-Row
--------------------------------------
-    
-### Portrait bio-géographique des espèces
-
-```{r fig.width=10}
-p1
-```
-
-###
-
-```{r fig.width=7}
-p2
-```
-
-Row 
--------------------------------------
-    
-### Richesse en espèces
-
-```{r fig.width=10}
-p3
-```
-   
-###
-
-```{r fig.width=7}
-p4
-```
-
-
-
-
-
-
-Masse et style de vie {data-icon="fas fa-leaf"}
-===================================== 
-
-Rows
--------------------------------------
-### Distribution de la masse
-```{r plot_masse_richesse, fig.width=15}
-g1
-```
-
-###
-```{r plot_masse_richesse_lifestyle, fig.width=15}
-g2
-```
-
-
-Rows
--------------------------------------
-
-### Tendance 
-
-```{r plot_boxplot, warning=FALSE, fig.width=30, fig.height=8}
+```{r plot_boxplot, warning=FALSE,fig.width=20, fig.height=6}
 grid.arrange(b1,b2, b3, b4, nrow=1)
 ```
+```{r}
+save(list = ls(), file = "env.RData") 
+```
+

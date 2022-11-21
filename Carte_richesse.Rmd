@@ -26,6 +26,7 @@ library(gridExtra)
 library(tidyverse)
 library(showtext)
 library(extrafont)
+library(archive)
 ```
 
 ## Import et sélection 
@@ -82,8 +83,8 @@ loadfonts(device = "win")
 font_add_google("Montserrat")
 ```
 
-```{r, warning=FALSE}
-ggplot(gridB.sf) +
+```{r map, warning=FALSE}
+p1 <- ggplot(gridB.sf) +
   geom_sf(aes(geometry = geometry, fill = col, color = col)) +
   scale_colour_gradientn(colours = colors, name = "Richesse spécifique") +
   scale_fill_gradientn(colours = colors, name = "Richesse spécifique", 
@@ -95,40 +96,44 @@ ggplot(gridB.sf) +
   labs(title = "Distribution de la richesse en espèces d'oiseaux", 
        subtitle = "selon les données de BirdLife")+
   theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
+        plot.margin = unit(c(0,0,0,0), "cm"),
         plot.subtitle = element_text(hjust = 0.15, vjust=-0.4, family="Montserrat"),
         legend.position=c(0.18, 0.18), 
-        legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
-        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
-        panel.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.title = element_text(size=8, family="Montserrat", face="bold", vjust = 0.8),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent",colour = NA),
         legend.background = element_rect(fill = "#f5f5f2", color = NA), 
-        #legend.key.height = unit(2.5, "mm")
+        legend.key.height = unit(2.5, "mm")
   )
-
 ```
-```{r}
-gridB.sf %>% 
+```{r densite}
+p2 <- gridB.sf %>% 
   ggplot() +
   aes(x = n.sp,y=..density.., fill=stat(x)) +
-  geom_density_ridges_gradient()+
+  geom_density_ridges_gradient(size=1.5)+
   scale_fill_gradientn(colours = colors, name = "",
                        guide=guide_colourbar(title.position = "bottom", 
                                              direction = "horizontal",
                                              ticks = FALSE))+
   theme_ridges() +
   labs(title = "Densité de la richesse en espèces")+
-  theme(plot.title = element_text(hjust = 0.18, vjust=3, size = 15, family="Montserrat", face="bold"),
-        plot.margin = unit(c(1,0,1,0), "cm"),
-        legend.position=c(0.02, -0.2),
+  theme(plot.title = element_blank(),
+        plot.margin = unit(c(0.5,0,0.5,0), "cm"),
+        legend.position=c(0.02, -0.15),
         legend.title = element_text(size=10, family="Montserrat", face="bold", vjust = 0.8),
-        plot.background = element_rect(fill = "#f5f5f2", color = "#f5f5f2"), 
-        panel.background = element_rect(fill = "#f5f5f2", color = NA),
-        legend.background = element_rect(fill = "#f5f5f2", color = NA), 
+        plot.background = element_rect(fill = "white", color = "#f5f5f2"), 
+        panel.background = element_rect(fill = "white", color = NA),
+        legend.background = element_rect(fill = "white", color = NA), 
         legend.margin = margin(6, 6, 6, 6),
         legend.key.height = unit(5, "mm"), 
-        legend.key.width =  unit(3.1, "cm"),
+        legend.key.width =  unit(4.3, "cm"),
         axis.text.x = element_blank()
   )+
-  ylab("Densité")+
+  ylab("")+
   xlab("")
+```
+
+```{r, fig.width=10, fig.height=9}
+grid.arrange(p1, p2, heights=c(5,3))
 ```
 
