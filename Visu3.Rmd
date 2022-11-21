@@ -117,7 +117,7 @@ g3 <- species %>%
   labs(title = "Distribution de la masse en fonction du style de vie", 
        subtitle = "zoom sur toutes les espèces dont la masse est inférieure à 500g")+
   xlim(0,500)+
-  facet_wrap(Generalist_specialist~., scales="free", ncol = 1)+
+  facet_wrap(Generalist_specialist~., scales="free_y", ncol = 1)+
   theme(legend.position = "none",
         plot.title = element_text(hjust = -1, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.subtitle = element_text(hjust = -0.35, vjust=0, family="Montserrat"),
@@ -152,6 +152,12 @@ species.traits <- SPECIES %>% select(Species1, Female, Male, Wing.Length, Beak.L
                             "Non aquatique" = "Terrestrial",
                             "Non aquatique" = "Insessorial",
                             "Aquatique" = "Aquatic"),
+         Generalist_specialist = fct_recode(Lifestyle, 
+                                            "Généraliste" = "Generalist", 
+                                            "Spécialiste" = "Aerial",
+                                            "Spécialiste" = "Aquatic", 
+                                            "Spécialiste" = "Insessorial",
+                                            "Spécialiste" = "Terrestrial"),
          Lifestyle = fct_recode(Lifestyle, 
                                 "Terrestre" = "Terrestrial",
                                 "Aérien" = "Aerial",
@@ -246,11 +252,13 @@ species.traits %>%
 ## Grid : en quoi les oiseaux aquatiques se démarquent ?
 
 ```{r warning=FALSE}
-colors<-c(aquatique,generaliste, insessorial, aerien,terrestre)
+colors<-c(aquatique, insessorial, aerien, terrestre, generaliste)
 
 b1 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Wing.Length)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
+  facet_wrap(~Generalist_specialist, scales = "free", ncol=1)+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black")+
   coord_flip()+
   theme_ridges() +
   ylim(-0.5, 0.5)+
@@ -268,6 +276,8 @@ b1 <- species.traits %>%
 b2 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Tarsus.Length)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
+  facet_wrap(~Generalist_specialist, scales = "free", ncol=1)+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
   ylim(-0.5, 0.5)+
@@ -281,9 +291,12 @@ b2 <- species.traits %>%
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
         panel.background = element_rect(fill = "#f5f5f2", color = NA),
   )
+
 b3 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Tail.Length)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
+  facet_grid(~Generalist_specialist, scales = "free_y", space = "free_y", cols=1)+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
   ylim(-0.5, 0.5)+
@@ -301,6 +314,8 @@ b3 <- species.traits %>%
 b4 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Beak.Length_Culmen)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
+  facet_wrap(~Generalist_specialist, scales = "free", ncol=1)+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
   ylim(-0.5, 0.5)+
@@ -318,6 +333,8 @@ b4 <- species.traits %>%
 b5 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Beak.Width)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
+  facet_wrap(~Generalist_specialist, scales = "free", ncol=1)+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
   ylim(-0.5, 0.5)+
@@ -330,11 +347,15 @@ b5 <- species.traits %>%
         plot.title = element_text(size = 15, family="Montserrat", face="bold"),
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
         panel.background = element_rect(fill = "#f5f5f2", color = NA),
-  )
+  )+
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red")
+
 
 b6 <- species.traits %>% 
   ggplot(aes(x=Lifestyle,y=lm(log(Beak.Depth)~log(Mass))$resid,fill=Lifestyle))+
   geom_boxplot()+
+  facet_wrap(~Generalist_specialist, scales = "free", ncol=1)+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
   ylim(-0.5, 0.5)+
@@ -347,7 +368,7 @@ b6 <- species.traits %>%
         plot.title = element_text(size = 15, family="Montserrat", face="bold"),
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
         panel.background = element_rect(fill = "#f5f5f2", color = NA),
-  )
+  strip.text.x = element_blank())
 ```
 
 Le boxplot s'interprête tel que plus les box sont larges et loin de 0, plus les individus d'une classe sont loin de la tendance générale.  
