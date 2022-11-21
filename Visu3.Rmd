@@ -53,7 +53,8 @@ aquatique <- "#51abb0"
 generaliste <- "#95c4aa"
 insessorial <- "#285928"
 terrestre <- "#664b2c"
-colors<-c(aerien, aquatique, insessorial, terrestre, generaliste)
+
+colors<-c(aerien, aquatique,generaliste, insessorial,terrestre)
 ```
 
 # Masse \~ Lifestyle
@@ -252,7 +253,7 @@ species.traits %>%
 ## Grid : en quoi les oiseaux aquatiques se démarquent ?
 
 ```{r warning=FALSE}
-colors<-c(aquatique, insessorial, aerien, terrestre, generaliste)
+colors<-c(aquatique, generaliste, insessorial, aerien, terrestre)
 ticksY <-c(-0.50, -0.25, 0.00, 0.25, 0.50)
 
 b1 <- species.traits %>% 
@@ -264,12 +265,11 @@ b1 <- species.traits %>%
   theme_ridges() +
   scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
                      labels=expression(-0.50, -0.25, 'Tendance générale : 0.00',0.25,0.50)) +
-  #theme(axis.text.y = element_text(colour = c('black', 'black','red', 'black', 'black')))+
+  theme(axis.text.y = element_text(colour = 'black'))+
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1))+
+  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black")))+
   labs(title = "Taille relative de l'aile",x=NULL, y ="")+
   theme(legend.position='none', 
-        axis.text.y = element_text(colour = c("red", "black", "black", "black","black")),
         plot.margin = unit(c(1,1,1,0), "cm"),
         plot.title = element_text(size = 15, family="Montserrat", face="bold"),
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
@@ -283,9 +283,10 @@ b2 <- species.traits %>%
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
-  ylim(-0.5, 0.5)+
+  scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
+                     labels=expression(-0.50, -0.25, 'Tendance générale : 0.00',0.25,0.50)) +
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
+  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black")))+
   labs(title = "Taille relative de la tarse",x=NULL, y ="")+
   theme(legend.position='none', 
         axis.text.y = element_blank(),
@@ -302,9 +303,10 @@ b3 <- species.traits %>%
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
-  ylim(-0.5, 0.5)+
+  scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
+                     labels=expression(-0.50, -0.25, 'Tendance générale : 0.00',0.25,0.50)) +
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
+  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black")))+
   labs(title = "Taille relative de la queue",x=NULL, y ="")+
   theme(legend.position='none', 
         axis.text.y = element_blank(),
@@ -321,9 +323,10 @@ b4 <- species.traits %>%
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
-  ylim(-0.5, 0.5)+
+  scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
+                     labels=expression(-0.50, -0.25, 'Tendance générale : 0.00',0.25,0.50)) +
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
+  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black")))+
   labs(title = "Taille relative du bec",x=NULL, y ="")+
   theme(legend.position='none', 
         axis.text.y = element_blank(),
@@ -340,9 +343,10 @@ b5 <- species.traits %>%
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
-  ylim(-0.5, 0.5)+
+  scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
+                     labels=expression(-0.50, -0.25, 'Tendance générale : 0.00',0.25,0.50)) +
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
+  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black")))+
   labs(title = "Poids relative du bec",x=NULL, y ="")+
   theme(legend.position='none', 
         axis.text.y = element_blank(),
@@ -359,17 +363,17 @@ b6 <- species.traits %>%
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
-  ylim(-0.5, 0.5)+
+  scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
+                     labels=expression(-0.50, -0.25, 'Tendance générale : 0.00',0.25,0.50)) +
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
+  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black")))+
   labs(title = "Profondeur relative du bec",x=NULL, y ="")+
   theme(legend.position='none', 
         axis.text.y = element_blank(),
         plot.margin = unit(c(1,1,1,0), "cm"),
         plot.title = element_text(size = 15, family="Montserrat", face="bold"),
         plot.background = element_rect(fill = "#f5f5f2", color ="#f5f5f2"),
-        panel.background = element_rect(fill = "#f5f5f2", color = NA),
-  strip.text.x = element_blank())
+        panel.background = element_rect(fill = "#f5f5f2", color = NA))
 ```
 
 Le boxplot s'interprête tel que plus les box sont larges et loin de 0, plus les individus d'une classe sont loin de la tendance générale.  
