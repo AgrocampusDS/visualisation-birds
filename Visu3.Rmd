@@ -20,6 +20,7 @@ library(dplyr)
 library(tidyverse)
 library(readxl)
 library(ggridges)
+library(grid)
 # library(viridis)
 ```
 
@@ -88,7 +89,7 @@ aquatique <- "#51abb0"
 generaliste <- "#95c4aa"
 insessorial <- "#285928"
 terrestre <- "#664b2c"
-colors<-c(aerien, aquatique, generaliste, insessorial, terrestre)
+colors<-c(aerien, aquatique, insessorial, terrestre, generaliste)
 
 g3 <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% 
   mutate(Lifestyle = fct_recode(Lifestyle, "Aérien" = "Aerial"),
