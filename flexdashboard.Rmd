@@ -1,5 +1,5 @@
 ---
-title: "Portrait macroécologique des oiseaux du monde"
+title: "Portrait biogéographique des oiseaux du monde"
 author: "Armelle L. et Marion M."
 output: 
   flexdashboard::flex_dashboard:
