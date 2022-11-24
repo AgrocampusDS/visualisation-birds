@@ -179,15 +179,6 @@ species.traits %>%
   theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
   labs(x=NULL, y ="Taille de l'aile")+
   theme(legend.position='none')
-
-species.traits %>% 
-  ggplot(aes(x=Lifestyle,y=lm(log(Wing.Length)~log(Mass))$resid,fill=Lifestyle))+
-  geom_boxplot()+
-  theme_classic()+
-  # scale_fill_manual(values = cols.T) + 
-  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
-  labs(x=NULL, y ="Taille relative de l'aile")+
-  theme(legend.position='none')
 ```
 ```{r Beak.Length_Culmen.boxplot}
 species.traits %>% 
@@ -219,15 +210,6 @@ species.traits %>%
   theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
   labs(x=NULL, y ="Taille du tarse")+
   theme(legend.position='none')
-
-# Residus -> obtention de la variabilité intra groupe
-species.traits %>% 
-  ggplot(aes(x=Lifestyle,y=lm(log(Tarsus.Length)~log(Mass))$resid,fill=Lifestyle))+
-  geom_boxplot()+
-  theme_classic()+
-  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
-  labs(x=NULL, y ="Taille relative du tarse")+
-  theme(legend.position='none')
 ```
 ```{r  Tail.Length.boxplot}
 species.traits %>% 
@@ -239,25 +221,27 @@ species.traits %>%
   theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
   labs(x=NULL, y ="Taille de la queue")+
   theme(legend.position='none')
-
-# Residus -> obtention de la variabilité intra groupe
-species.traits %>% 
-  ggplot(aes(x=Lifestyle,y=lm(log(Tail.Length)~log(Mass))$resid,fill=Lifestyle))+
-  geom_boxplot()+
-  theme_classic()+
-  theme(axis.text.x = element_text(angle= 45,hjust=1,color="black"))+
-  labs(x=NULL, y ="Taille relative de la queue")+
-  theme(legend.position='none')
 ```
 
-## Grid : en quoi les oiseaux aquatiques se démarquent ?
+## Qu'est ce qui caractérise la masse 
+
+```{r Wing.Length.hist}
+b1 <- species.traits %>% ggplot() + aes(x=Wing.Length) + geom_histogram(bins=100)
+b2 <- species.traits %>% ggplot() + aes(x=Beak.Length_Culmen) + geom_histogram(bins=100)
+b3 <- species.traits %>% ggplot() + aes(x=Tarsus.Length) + geom_histogram(bins=100)
+b4 <- species.traits %>% ggplot() + aes(x=Tail.Length) + geom_histogram(bins=100)
+```
+```{r plot_boxplot, warning=FALSE, fig.width=30, fig.height=8}
+grid.arrange(b1,b2, b3, b4, nrow=1)
+```
+
 
 ```{r warning=FALSE}
 colors<-c(aquatique, generaliste, insessorial, aerien, terrestre)
 ticksY <-c(-0.50, -0.25, 0.00, 0.25, 0.50)
 
 b1 <- species.traits %>% 
-  ggplot(aes(x=Lifestyle,y=lm(log(Wing.Length)~log(Mass))$resid,fill=Lifestyle))+
+  ggplot(aes(x=Lifestyle,y=lm(log(Wing.Length)~log(Mass)+Lifestyle)$resid,fill=Lifestyle))+
   geom_boxplot()+
   facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
   geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
@@ -388,7 +372,7 @@ grid.arrange(b1,b2, b3, b4, nrow=1)
 ```{r reg.lineaire, fig.width=15, fig.height=6}
 p1 <- species.traits %>% filter(Mass < 1000) %>% 
   ggplot()+
-  aes(x=Wing.Length, y=Mass, col=Lifestyle)+
+  aes(x=Mass, y=Wing.Length, col=Lifestyle)+
   geom_point()+
   geom_smooth(method="lm")+
   scale_color_manual(values=colors)+
@@ -397,39 +381,38 @@ p1 <- species.traits %>% filter(Mass < 1000) %>%
 
 p2 <- species.traits %>% filter(Mass < 1000) %>% 
   ggplot()+
-  aes(x= Tarsus.Length, y=Mass, col=class)+
+  aes(x= Mass, y=Tarsus.Length, col=Lifestyle)+
   geom_point()+
   geom_smooth(method="lm")+
-  scale_color_manual(values=c("#545a61", aquatique))+
+  scale_color_manual(values=colors)+
   theme_ridges()+
   theme(legend.position = "none")
 
 p3 <- species.traits %>% filter(Mass < 1000) %>% 
   ggplot()+
-  aes(x= Tail.Length, y=Mass, col=class)+
+  aes(x= Mass, y=Tail.Length, col=Lifestyle)+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=c("#545a61", aquatique))+
+  scale_color_manual(values=colors)+
   theme_ridges()+
   theme(legend.position = "none")
 
 p4<- species.traits %>% filter(Mass < 1000) %>% 
   ggplot()+
-  aes(x= Beak.Length_Culmen, y=Mass, col=class)+
+  aes(x=Mass , y=Beak.Length_Culmen, col=Lifestyle)+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=c("#545a61", aquatique))+
+  scale_color_manual(values=colors)+
   theme_ridges()+
   theme(legend.position = "none")
 
 grid.arrange(p1, p2, p3, p4, nrow=1)
 ```
 
-
 # Masse ~ Order
 
 ```{r}
-species.2 <- species %>% select(Species1, Mass, Order1) %>% rename(species = Species1, order = Order1)
+species.2 <- SPECIES %>% select(Species1, Mass, Order1) %>% rename(species = Species1, order = Order1)
 
 seuil <- species.2 %>% group_by(order) %>% summarise(n = n())
 seuil <- mean(seuil$n)
@@ -444,9 +427,8 @@ species.2 %>% group_by(order) %>% mutate(n = n()) %>% filter(n > seuil) %>% sele
 ```
 
 # Masse ~ Family
-
 ```{r}
-species.3 <- species %>% select(Species1, Mass, Family1) %>% rename(species = Species1, family = Family1)
+species.3 <- SPECIES %>% select(Species1, Mass, Family1) %>% rename(species = Species1, family = Family1)
 
 seuil <- species.3 %>% group_by(family) %>% summarise(n = n())
 seuil <- quantile(seuil$n, prob = 0.90)

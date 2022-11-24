@@ -1,5 +1,6 @@
 ---
-title: "Masse des oiseaux et richesses d'espèces"
+
+title: "Portrait biogéographique des oiseaux"
 author: "Armelle L. et Marion M."
 output: 
   flexdashboard::flex_dashboard:
@@ -173,7 +174,7 @@ p1 <- carte1.sf %>% rename(Masse = col) %>%
         legend.title = element_text(size=8, family="Montserrat", face="bold", vjust = 0.8),
         panel.background = element_rect(fill = "transparent",colour = NA),
         plot.background = element_rect(fill = "transparent",colour = NA),
-        legend.background = element_rect(fill = "#f5f5f2", color = NA), 
+        legend.background = element_rect(fill = "white", color = NA), 
         legend.key.height = unit(2.5, "mm")
   )
 
@@ -185,7 +186,7 @@ p2 <- carte1.sf %>% mutate(grp=as.factor(col)) %>% filter(grp == c("10","20", "3
                                              direction = "horizontal",
                                              ticks = FALSE))+
   theme_ridges() +
-  labs(title = "Densité des groupes associés à la masse")+
+  labs(title = "Densité des groupes associés à la masse (g)")+
   theme(plot.title = element_text(hjust = 0.2, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.margin = unit(c(0.5,0,0.5,0), "cm"),
         legend.position=c(0.02, -0.10),
@@ -220,7 +221,7 @@ p3 <- ggplot(carte2.sf) +
         legend.title = element_text(size=8, family="Montserrat", face="bold", vjust = 0.8),
         panel.background = element_rect(fill = "transparent",colour = NA),
         plot.background = element_rect(fill = "transparent",colour = NA),
-        legend.background = element_rect(fill = "#f5f5f2", color = NA), 
+        legend.background = element_rect(fill = "white", color = NA), 
         legend.key.height = unit(2.5, "mm")
   )
 
@@ -257,16 +258,24 @@ insessorial <- "#285928"
 terrestre <- "#664b2c"
 ```
 ```{r masse_richesse}
-colors<-c(aerien, aquatique, generaliste, insessorial, terrestre)
+colors<-c(terrestre, generaliste, insessorial, aerien, aquatique)
 
 species <- SPECIES %>% mutate(Species1 = as.factor(Species1), 
                               Family1 = as.factor(Family1), 
                               Order1 = as.factor(Order1), 
-                              Lifestyle = as.factor(Primary.Lifestyle))
+                              Lifestyle = as.factor(Primary.Lifestyle),
+                              Generalist_specialist = fct_recode(Lifestyle, 
+                                                                 "Généraliste" = "Generalist", 
+                                                                 "Spécialiste" = "Aerial",
+                                                                 "Spécialiste" = "Aquatic", 
+                                                                 "Spécialiste" = "Insessorial",
+                                                                 "Spécialiste" = "Terrestrial")
+                              ) 
+  
 
 mean <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% summarise(m=mean(Mass))
 mean <- mean$m
-g1 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filter(Mass < 500) %>% 
+g1 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% 
   ggplot() +
   aes(x = Mass, y=..density..) +
   geom_histogram(bins = 100, fill ="#664b2c", col ="#999999") + 
@@ -277,22 +286,25 @@ g1 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>% filt
                  label = paste0("Moyenne de la masse\n de l'échantillon : ", as.character(round(mean))),
                  label.size = 0.5), 
              fill = "#DCDAEB")+
-  labs(title = "Distribution de la masse", 
+
+  labs(title = "Relation masse et richesse en espèces", 
        subtitle = "zoom sur toutes les espèces dont la masse est inférieure à 500g")+
   xlab("Masse (g)")+
-  ylab("Densité")+
+  ylab("Richesse en espèces")+
   theme(plot.title = element_text(hjust = 0.1, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.subtitle = element_text(hjust = 0.15, vjust=0, family="Montserrat"),
         plot.background = element_rect(fill = "white", color ="#f5f5f2"),
         panel.background = element_rect(fill = "white", color = NA)
-  )
+  )+
+  xlim(NA,500)
 
-g2 <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species1) %>% 
+g2 <- species %>% select(Species1, Mass, Lifestyle, Generalist_specialist) %>% rename(species = Species1) %>% 
   mutate(Lifestyle = fct_recode(Lifestyle, "Aérien" = "Aerial"),
                       Lifestyle = fct_recode(Lifestyle, "Terrestre" = "Terrestrial"), 
                       Lifestyle = fct_recode(Lifestyle, "Insessoriel" = "Insessorial"),
                       Lifestyle = fct_recode(Lifestyle, "Aquatique" = "Aquatic"),
-                      Lifestyle = fct_recode(Lifestyle, "Généraliste" = "Generalist")) %>% 
+                      Lifestyle = fct_recode(Lifestyle, "Généraliste" = "Generalist"),
+         Lifestyle = factor(Lifestyle, levels=rev(c("Aquatique","Aérien","Insessoriel", "Généraliste", "Terrestre" )))) %>% 
   ggplot()+
   aes(x = Mass, y = Lifestyle, fill = Lifestyle)+
   geom_density_ridges() +
@@ -303,15 +315,16 @@ g2 <- species %>% select(Species1, Mass, Lifestyle) %>% rename(species = Species
   labs(title = "Distribution de la masse en fonction du style de vie", 
        subtitle = "zoom sur toutes les espèces dont la masse est inférieure à 500g")+
   xlim(0,500)+
+  facet_wrap(Generalist_specialist~., scales="free_y", ncol = 1)+
   theme(legend.position = "none",
         plot.title = element_text(hjust = 0.5, vjust=0, size = 15, family="Montserrat", face="bold"),
         plot.subtitle = element_text(hjust = 0, vjust=0, family="Montserrat"),
         plot.background = element_rect(fill = "white", color ="#f5f5f2"),
         panel.background = element_rect(fill = "white", color = NA),
-        axis.text.y = element_text(colour = c("black", "red", "black", "black", "black"))
+        axis.text.y = element_text(colour = c("black", "black", "black", "red", "black"))
         ) 
 ```
-```{r aquatique}
+```{r traits}
 species.traits <- SPECIES %>% select(Species1, Female, Male, Wing.Length, Beak.Length_Culmen,Beak.Width, Beak.Depth, Tarsus.Length, Tail.Length,  Mass, Primary.Lifestyle, Habitat.Density) %>% rename(species = Species1, Lifestyle=Primary.Lifestyle) %>% 
   mutate(class = fct_recode(Lifestyle, 
                             "Non aquatique" = "Aerial",
@@ -331,89 +344,84 @@ species.traits <- SPECIES %>% select(Species1, Female, Male, Wing.Length, Beak.L
                                 "Insessoriel" = "Insessorial",
                                 "Aquatique" = "Aquatic",
                                 "Généraliste" = "Generalist"),
-         Lifestyle = factor(Lifestyle, levels=rev(c("Terrestre","Aérien","Insessoriel", "Généraliste", "Aquatique" )))
+         Lifestyle = factor(Lifestyle, levels=rev(c("Aquatique","Aérien","Insessoriel", "Généraliste", "Terrestre" )))
          )
 
-colors<-c(aquatique, generaliste, insessorial, aerien, terrestre)
-ticksY <-c(-0.50, -0.25, 0.00, 0.25, 0.50)
+colors<-c(terrestre, generaliste, insessorial, aerien, aquatique)
 
 b1 <- species.traits %>% 
-  ggplot(aes(x=Lifestyle,y=lm(log(Wing.Length)~log(Mass))$resid,fill=Lifestyle))+
+  ggplot(aes(x=Lifestyle,y=log(Wing.Length),fill=Lifestyle))+
   geom_boxplot()+
   facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
-  scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
-                     labels=expression(-0.50, -0.25, 'Tendance générale',0.25,0.50)) +
   theme(axis.text.y = element_text(colour = 'black'))+
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black"), size = 15))+
-  labs(title = "Taille relative de l'aile",x=NULL, y ="")+
+  labs(title = "Taille de l'aile",x=NULL, y ="", subtitle="Echelle logarithmique")+
   theme(legend.position='none', 
+        axis.text.x = element_text(hjust=1, size = 15),
         plot.margin = unit(c(1,1,1,0), "cm"),
         plot.title = element_text(size = 18, family="Montserrat", face="bold"),
         plot.background = element_rect(fill = "white", color ="white"),
         panel.background = element_rect(fill = "white", color = NA),
-        strip.text = element_text(size = 15)
-  )
+        strip.text = element_text(size = 15), 
+        axis.text.y = element_text(colour=c("black", "black", "black", "red", "black"))
+  )+
+  ylim(2, NA)+
+  scale_y_continuous(breaks=seq(2,6,1))+
+  ylim(2, NA)
 
 b2 <- species.traits %>% 
-  ggplot(aes(x=Lifestyle,y=lm(log(Tarsus.Length)~log(Mass))$resid,fill=Lifestyle))+
+  ggplot(aes(x=Lifestyle,y=log(Tarsus.Length),fill=Lifestyle))+
   geom_boxplot()+
   facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
-  scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
-                     labels=expression(-0.50, -0.25, 'Tendance générale',0.25,0.50)) +
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black")))+
-  labs(title = "Taille relative de la tarse",x=NULL, y ="")+
+  labs(title = "Taille de la tarse",x=NULL, y ="", subtitle="Echelle logarithmique")+
   theme(legend.position='none', 
+        axis.text.x = element_text(hjust=1, size = 15),
         axis.text.y = element_blank(),
         plot.margin = unit(c(1,1,1,0), "cm"),
         plot.title = element_text(size = 18, family="Montserrat", face="bold"),
         plot.background = element_rect(fill = "white", color ="white"),
         panel.background = element_rect(fill = "white", color = NA),
         strip.text = element_text(size = 15)
-  )
+  )+
+  scale_y_continuous(breaks=seq(2,6,1))
 
 b3 <- species.traits %>% 
-  ggplot(aes(x=Lifestyle,y=lm(log(Tail.Length)~log(Mass))$resid,fill=Lifestyle))+
+  ggplot(aes(x=Lifestyle,y=log(Tail.Length),fill=Lifestyle))+
   geom_boxplot()+
   facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
-  scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
-                     labels=expression(-0.50, -0.25, 'Tendance générale',0.25,0.50)) +
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black")))+
-  labs(title = "Taille relative de la queue",x=NULL, y ="")+
+  labs(title = "Taille de la queue",x=NULL, y ="", subtitle="Echelle logarithmique")+
   theme(legend.position='none', 
         axis.text.y = element_blank(),
         plot.margin = unit(c(1,1,1,0), "cm"),
+        axis.text.x = element_text(hjust=1, size = 15),
         plot.title = element_text(size = 18, family="Montserrat", face="bold"),
         plot.background = element_rect(fill = "white", color ="white"),
         panel.background = element_rect(fill = "white", color = NA),
         strip.text = element_text(size = 15)
-  )
+  )+
+  scale_y_continuous(breaks=seq(2,6,1))+
+  ylim(2, NA)
 
 b4 <- species.traits %>% 
-  ggplot(aes(x=Lifestyle,y=lm(log(Beak.Length_Culmen)~log(Mass))$resid,fill=Lifestyle))+
+  ggplot(aes(x=Lifestyle,y=log(Beak.Length_Culmen),fill=Lifestyle))+
   geom_boxplot()+
   facet_wrap(~Generalist_specialist, scales = "free_y", ncol=1)+
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red")+
   coord_flip()+
   theme_ridges() +
-  scale_y_continuous(breaks=ticksY, limits=c(-0.50, 0.50),
-                     labels=expression(-0.50, -0.25, 'Tendance générale',0.25,0.50)) +
   scale_fill_manual(values=colors)+
-  theme(axis.text.x = element_text(angle= 45,hjust=1, colour = c("black", "black", "red", "black","black")))+
-  labs(title = "Taille relative du bec",x=NULL, y ="")+
+  labs(title = "Taille du bec",x=NULL, y ="", subtitle="Echelle logarithmique")+
+  scale_y_continuous(breaks=seq(2,6,1))+
   theme(legend.position='none', 
         axis.text.y = element_blank(),
+        axis.text.x = element_text(hjust=1 , size = 15),
         plot.margin = unit(c(1,1,1,0), "cm"),
         plot.title = element_text(size = 18, family="Montserrat", face="bold"),
         plot.background = element_rect(fill = "white", color ="white"),
@@ -422,53 +430,19 @@ b4 <- species.traits %>%
   )
 ```
 
-Tableau de bord {data-icon="fas fa-home"}
-===================================== 
 
-Row
--------------------------------------
-    
-### Densité de la masse
-
-```{r}
-g1
-```
-
-### Distribution géographique de la masse
-
-```{r fig.width=10}
-p1
-```
-
-Row 
--------------------------------------
-    
-### Distribution par style de vie
-
-```{r fig.width=8}
-g2
-```
-
-### Distribution géographique du nombre d'espèces
-
-```{r fig.width=10}
-p3
-```
-    
 Portrait géographique {data-icon="fas fa-map"}
 ===================================== 
 
 Row
 -------------------------------------
     
-### Portrait bio-géographique des espèces
-
+### 
 ```{r fig.width=10}
 p1
 ```
 
 ###
-
 ```{r fig.width=7}
 p2
 ```
@@ -476,35 +450,31 @@ p2
 Row 
 -------------------------------------
     
-### Richesse en espèces
 
+### 
 ```{r fig.width=10}
 p3
 ```
    
 ###
-
 ```{r fig.width=7}
 p4
 ```
 
 
-
-
-
-
-Masse et style de vie {data-icon="fas fa-leaf"}
+Masse et richesse en espèces {data-icon="fas fa-leaf"}
 ===================================== 
 
 Rows
 -------------------------------------
-### Distribution de la masse
-```{r plot_masse_richesse, fig.width=15}
+
+### 
+```{r plot_masse_richesse, fig.width=10}
 g1
 ```
 
 ###
-```{r plot_masse_richesse_lifestyle, fig.width=15}
+```{r plot_masse_richesse_lifestyle, fig.width=8}
 g2
 ```
 
@@ -512,8 +482,7 @@ g2
 Rows
 -------------------------------------
 
-### Tendance 
-
+### 
 ```{r plot_boxplot, warning=FALSE, fig.width=30, fig.height=8}
 grid.arrange(b1,b2, b3, b4, nrow=1)
 ```
