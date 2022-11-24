@@ -1,5 +1,5 @@
 ---
-title: "Portrait biogéographique des oiseaux"
+title: "Portrait macroécologique des oiseaux"
 author: "Armelle L. et Marion M."
 output: 
   flexdashboard::flex_dashboard:
@@ -10,6 +10,8 @@ output:
       - { title: "Données :", align: right }
       - { icon: "fa-database", href: "http://datazone.birdlife.org/species/taxonomy", align: right }
       - { icon: "fa-map", href: "https://giscrack.com/product/download-shapefile-shp-of-all-countries-of-the-world/", align: right }
+    social: menu
+    source_code: embed
 params:
   setup_path: ../resources/
 ---
@@ -253,7 +255,7 @@ generaliste <- "#95c4aa"
 insessorial <- "#285928"
 terrestre <- "#664b2c"
 ```
-```{r masse_richesse}
+```{r masse_richesse, cache=TRUE}
 colors<-c(terrestre, generaliste, insessorial, aerien, aquatique)
 
 species <- SPECIES %>% mutate(Species1 = as.factor(Species1), 
@@ -297,10 +299,10 @@ g1 <- species %>% select(Species1, Mass) %>% rename(species = Species1) %>%
 g2 <- species %>% select(Species1, Mass, Lifestyle, Generalist_specialist) %>% rename(species = Species1) %>% 
   mutate(Lifestyle = fct_recode(Lifestyle, "Aérien" = "Aerial"),
                       Lifestyle = fct_recode(Lifestyle, "Terrestre" = "Terrestrial"), 
-                      Lifestyle = fct_recode(Lifestyle, "Insessoriel" = "Insessorial"),
+                      Lifestyle = fct_recode(Lifestyle, "Perché" = "Insessorial"),
                       Lifestyle = fct_recode(Lifestyle, "Aquatique" = "Aquatic"),
                       Lifestyle = fct_recode(Lifestyle, "Généraliste" = "Generalist"),
-         Lifestyle = factor(Lifestyle, levels=rev(c("Aquatique","Aérien","Insessoriel", "Généraliste", "Terrestre" )))) %>% 
+         Lifestyle = factor(Lifestyle, levels=rev(c("Aquatique","Aérien","Perché", "Généraliste", "Terrestre" )))) %>% 
   ggplot()+
   aes(x = Mass, y = Lifestyle, fill = Lifestyle)+
   geom_density_ridges() +
@@ -337,10 +339,10 @@ species.traits <- SPECIES %>% select(Species1, Female, Male, Wing.Length, Beak.L
          Lifestyle = fct_recode(Lifestyle, 
                                 "Terrestre" = "Terrestrial",
                                 "Aérien" = "Aerial",
-                                "Insessoriel" = "Insessorial",
+                                "Perché" = "Insessorial",
                                 "Aquatique" = "Aquatic",
                                 "Généraliste" = "Generalist"),
-         Lifestyle = factor(Lifestyle, levels=rev(c("Aquatique","Aérien","Insessoriel", "Généraliste", "Terrestre" )))
+         Lifestyle = factor(Lifestyle, levels=rev(c("Aquatique","Aérien","Perché", "Généraliste", "Terrestre" )))
          )
 
 colors<-c(terrestre, generaliste, insessorial, aerien, aquatique)
@@ -374,7 +376,7 @@ b2 <- species.traits %>%
   coord_flip()+
   theme_ridges() +
   scale_fill_manual(values=colors)+
-  labs(title = "Taille de la tarse",x=NULL, y ="", subtitle="Echelle logarithmique")+
+  labs(title = "Taille du tarse",x=NULL, y ="", subtitle="Echelle logarithmique")+
   theme(legend.position='none', 
         axis.text.x = element_text(hjust=1, size = 15),
         axis.text.y = element_blank(),
@@ -432,7 +434,7 @@ Outils et objectifs {data-icon="fas fa-database"}
 ### Caractérisation de la masse des oiseaux par la richesse en espèces des zones géographiques
 
 <center>
-![](www/colibri_autruche.JPG){width=50%}
+![](www/colibri_autruche.png){width=35%}
 </center>
 
 <br>
@@ -487,24 +489,24 @@ p4
 Masse et richesse en espèces {data-icon="fas fa-leaf"}
 ===================================== 
 
-Rows
+Rows 
 -------------------------------------
 
 ### 
-```{r plot_masse_richesse, fig.width=10}
+```{r plot_masse_richesse, fig.width=12}
 g1
 ```
 
 ###
-```{r plot_masse_richesse_lifestyle, fig.width=8}
+```{r plot_masse_richesse_lifestyle, fig.width=11, fig.height=8}
 g2
 ```
 
 
-Rows
+Rows 
 -------------------------------------
 
 ### 
-```{r plot_boxplot, warning=FALSE, fig.width=30, fig.height=8}
+```{r plot_boxplot, warning=FALSE, fig.width=35, fig.height=8}
 grid.arrange(b1,b2, b3, b4, nrow=1)
 ```
