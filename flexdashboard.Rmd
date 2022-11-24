@@ -1,5 +1,4 @@
 ---
-
 title: "Portrait biogéographique des oiseaux"
 author: "Armelle L. et Marion M."
 output: 
@@ -45,7 +44,6 @@ color: white;
 }
 </style>
 ```
-
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(phytools)
@@ -65,7 +63,6 @@ library(plotly)
 library(ggridges)
 library(showtext)
 ```
-
 ```{r read_data, include = FALSE}
 # Traits par espèce BirdLife
 SPECIES <- read_xlsx("data/AVONET Supplementary dataset 1.xlsx", sheet = 2)
@@ -79,7 +76,6 @@ countriesGeo <- rgdal::readOGR("data/spatial/all_countries.shp")
 archive::archive_extract('data/spatial/AllSpeciesBirdLifeMaps2019.7z')
 rangeData<-read.csv("AllSpeciesBirdLifeMaps2019.csv")
 ```
-
 ```{r pre_process, cache=TRUE}
 # projection de Behrmann
 P4S.Behr <- CRS("+proj=cea +lon_0=0 +lat_ts=30 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs")
